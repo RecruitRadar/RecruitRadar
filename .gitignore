@@ -1,0 +1,7 @@
+test/*
+rallit_scraper/data/*
+venv
+
+.DS_Store
+credential/*
+.env

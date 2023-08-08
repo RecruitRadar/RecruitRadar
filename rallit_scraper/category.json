@@ -1,0 +1,82 @@
+{
+    "code": "DEVELOPER",
+    "name": "개발",
+    "jobs": [
+      {
+          "code": "BACKEND_DEVELOPER",
+          "name": "백엔드/서버 개발자"
+      },
+      {
+          "code": "FRONTEND_DEVELOPER",
+          "name": "프론트엔드/웹퍼블리셔"
+      },
+      {
+          "code": "SOFTWARE_ENGINEER",
+          "name": "SW 엔지니어"
+      },
+      {
+          "code": "ANDROID_DEVELOPER",
+          "name": "안드로이드 개발자"
+      },
+      {
+          "code": "IOS_DEVELOPER",
+          "name": "IOS 개발자"
+      },
+      {
+          "code": "CROSS_PLATFORM_DEVELOPER",
+          "name": "크로스플랫폼 앱 개발자"
+      },
+      {
+          "code": "DATA_ENGINEER",
+          "name": "데이터 엔지니어"
+      },
+      {
+          "code": "DATA_SCIENTIST",
+          "name": "데이터 사이언티스트"
+      },
+      {
+          "code": "DATA_ANALYST",
+          "name": "데이터 분석가"
+      },
+      {
+          "code": "MACHINE_LEARNING",
+          "name": "머신러닝 엔지니어"
+      },
+      {
+          "code": "DBA",
+          "name": "DBA"
+      },
+      {
+          "code": "DEV_OPS",
+          "name": "DevOps"
+      },
+      {
+          "code": "INFRA_ENGINEER",
+          "name": "시스템/네트워크 관리자"
+      },
+      {
+          "code": "QA_ENGINEER",
+          "name": "QA/테스트엔지니어"
+      },
+      {
+          "code": "SUPPORT_ENGINEER",
+          "name": "기술지원"
+      },
+      {
+          "code": "SECURITY_ENGINEER",
+          "name": "보안 엔지니어"
+      },
+      {
+          "code": "BLOCKCHAIN_ENGINEER",
+          "name": "블록체인 엔지니어"
+      },
+      {
+          "code": "HARDWARE_EMBEDDED_ENGINEER",
+          "name": "HW/임베디드 엔지니어"
+      },
+      {
+          "code": "AGILE_SCRUM_MASTER",
+          "name": "애자일/스크럼 마스터"
+      }
+    ]
+  }
