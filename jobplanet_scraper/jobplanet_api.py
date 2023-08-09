@@ -6,7 +6,7 @@ import aiohttp
 import boto3
 from datetime import date, datetime
 from dotenv import load_dotenv
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 load_dotenv()
 
@@ -32,8 +32,11 @@ class Scraper:
             11915: '머신러닝 엔지니어'
         }
 
-    
+
     async def fetch_data_from_api(self, api_url: str) -> Dict[str, Any]:
+        """
+        API로부터 response를 확인하고 data를 가져옵니다.
+        """
         async with aiohttp.ClientSession() as session:
             async with session.get(api_url) as response:
                 if response.status != 200:
@@ -45,10 +48,13 @@ class Scraper:
                 return data
 
 
-    async def get_job_lists(self, base_url: str, job_type_id: int) -> Dict[int, Any]:
+    async def get_job_lists(self, base_url: str, job_category_id: int) -> Dict[int, Any]:
+        """
+        해당 카테고리(job_type_id)에 맞는 공고 job_id list를 얻어냅니다.
+        """
         page_size = 9
         result = await self.fetch_data_from_api(
-            f'{base_url}api/v3/job/postings?order_by=recent&occupation_level2={job_type_id}&page=1&page_size={page_size}'
+            f'{base_url}api/v3/job/postings?order_by=recent&occupation_level2={job_category_id}&page=1&page_size={page_size}'
         )
         total_page_cnt_float = result['data']['total_count'] / page_size
         total_page_cnt = math.ceil(total_page_cnt_float)
@@ -56,21 +62,26 @@ class Scraper:
         job_lists_val = []
         for page in range(1, total_page_cnt + 1):
             result = await self.fetch_data_from_api(
-                f'{base_url}api/v3/job/postings?order_by=recent&occupation_level2={job_type_id}&page={page}&page_size={page_size}'
+                f'{base_url}api/v3/job/postings?order_by=recent&occupation_level2={job_category_id}&page={page}&page_size={page_size}'
             )
-            job_lists_val.extend(result['data']['recruits'])
-            await asyncio.sleep(2)
+            job_lists_val.extend([recruit['id'] for recruit in result['data']['recruits']])
+            await asyncio.sleep(1)
         
         job_lists = {}
-        job_lists[job_type_id] = job_lists_val
+        job_lists[job_category_id] = job_lists_val
 
         return job_lists
 
 
-    async def get_job_descriptions(self, base_url :str, job_type_id: int, value: Dict[int, Any]) -> Any:
+    async def get_job_descriptions(self, base_url :str, job_category_id: int, jd_lists_val: Dict[int, Any]) -> List[Dict[str, Any]]:
+        """
+        카테고리별로 수집한 JD list를 통해 각 JD의 정보를 얻어냅니다.
+        """
         job_descriptions = []
-        for i in range(len(value[job_type_id])):
-            post_id = value[job_type_id][i]['id']
+        job_lists = jd_lists_val[job_category_id]
+
+        for i in range(0, len(job_lists)):
+            post_id = job_lists[i]
             result = await self.fetch_data_from_api(
                 f'{base_url}api/v1/job/postings/{post_id}'
             )
@@ -80,34 +91,48 @@ class Scraper:
             end_at_text = date_object.strftime('%Y-%m-%d')
             
             val = {
-                'job_id': post_id,
+                'job_id': str(post_id),
                 'platform': 'jobplanet',
-                'category': self.category_dict[job_type_id],
-                'url': f'https://jobplanet.co.kr/job/search?posting_ids%5B%5D={post_id}',
+                'category': self.category_dict[job_category_id],
                 'company': result['data']['name'],
                 'title': result['data']['title'],
-                'primary_responsibility': result['data']['primary_responsibility'].replace("\r\n", "\n"),
+                'preferred': None if result['data']['preferred_skill'] == "" else result['data']['preferred_skill'].replace("\r\n", "\n"),
                 'required': result['data']['required_qualification'].replace("\r\n", "\n"),
-                'preferred': result['data']['preferred_skill'].replace("\r\n", "\n"),
+                'primary_responsibility': result['data']['primary_responsibility'].replace("\r\n", "\n"),
+                'url': f'https://jobplanet.co.kr/job/search?posting_ids%5B%5D={post_id}',
                 'end_at': end_at_text,
                 'skills': result['data']['skills'],
-                'location': result['data']['location'],
-                'body': '',
-                'company_description': result['data']['introduction'].replace("\r\n", "\n"),
-                'coordinate': [],
+                'location': None if result['data']['location'] == "" else result['data']['location'],
+                'welfare': None if result['data']['benefit'] == "" else result['data']['benefit'].replace("\r\n", "\n"),
+                'body': None,
+                'company_description': None if result['data']['introduction'] == "" else result['data']['introduction'].replace("\r\n", "\n"),
+                'coordinate': None,
             }
 
             job_descriptions.append(val)
             await asyncio.sleep(2)
-
+        
         return job_descriptions
 
 
     @staticmethod
-    def save_json(job_description: Any) -> str:
+    def save_json(total_job_descriptions: List[Dict[str, Any]]) -> str:
+        """
+        중복되는 job_id를 제거하고, 잡플래닛의 모든 Job Descriptions를 Json형식으로 저장합니다.
+        """
         file_path = "./results/jobplanet.json"
+        
+        unique_job_descriptions = []
+        seen_job_ids = set()
+        for item in total_job_descriptions:
+            if item['job_id'] not in seen_job_ids:
+                unique_job_descriptions.append(item)
+                seen_job_ids.add(item['job_id'])
+
+        result = {'results': unique_job_descriptions}
+
         with open(file_path, "w", encoding='utf-8') as json_file:
-            json.dump(job_description, json_file, ensure_ascii=False, indent=4)
+            json.dump(result, json_file, ensure_ascii=False, indent=4)
 
         return file_path
 
@@ -132,7 +157,10 @@ class Scraper:
         print(f"End Upload to s3://{path_name}")
 
 
-    async def main(self) -> Any:
+    async def main(self) -> List[Dict[str, Any]]:
+        """
+        Scraper Class의 main 함수입니다. 잡플래닛 JD 수집을 비동기로 실행합니다.
+        """
         total_jd_list = []
 
         tasks = [self.get_job_lists(self.base_url, job_type_id) for job_type_id in self.category_dict.keys()]
@@ -142,7 +170,7 @@ class Scraper:
         results = await asyncio.gather(*tasks)
         for result in results:
             total_jd_list.extend(result)
-        
+
         return total_jd_list
 
 
