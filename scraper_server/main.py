@@ -30,7 +30,7 @@ def request_test(request: Request):
     return {"message": "Hello World - FastAPI world"}
 
 
-@app.get("/scrape-rallit")
+@app.get("/api/v1/scrape-rallit")
 async def scrape_jobs() -> Dict[str, str]:
     try:
         start_time = time.time()
