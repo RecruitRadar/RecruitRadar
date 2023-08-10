@@ -16,7 +16,7 @@ from plugin.rallit_class import Scraper
 app = FastAPI()
 
 
-path = "/static"
+path = "static"
 isExist = os.path.exists(path)
 if not isExist: os.makedirs(path)
 app.mount("/static", StaticFiles(directory="static"), name="static")
