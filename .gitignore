@@ -1,4 +1,8 @@
+# workflows/*
+scraper_server.zip
+
 test/*
+test
 rallit_scraper/data/*
 wanted_scraper/data/*
 venv

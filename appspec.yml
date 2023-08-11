@@ -1,0 +1,11 @@
+version: 0.0
+os: linux
+
+files:
+  - source: /
+    destination: /home/ubuntu
+permissions:
+  - object: /home/ubuntu
+    owner: ubuntu
+    group: ubuntu
+    mode: 755
