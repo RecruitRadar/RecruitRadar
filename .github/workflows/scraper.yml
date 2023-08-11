@@ -54,13 +54,18 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
+
+            cd /home/ubuntu
+            chmod 700 .ssh
+            chmod 640 .ssh/authorized_keys
             cd /home/ubuntu/scraper_server
 
             # Generate the .env file with AWS credentials
             echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY }}" > .env
             echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_KEY }}" >> .env
             echo "AWS_DEFAULT_REGION=ap-northeast-2" >> .env
+            echo "BUCKET_NAME=${{ secrets.BUCKET_NAME }}" >> .env
 
             chmod 777 ./Dockerfile
             chmod 777 ./docker-compose.yml
-            docker-compose up -d
+            sudo docker-compose up -d
