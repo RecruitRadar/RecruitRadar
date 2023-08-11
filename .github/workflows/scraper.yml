@@ -54,10 +54,10 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-
             cd /home/ubuntu
             chmod 700 .ssh
             chmod 640 .ssh/authorized_keys
+            
             cd /home/ubuntu/scraper_server
 
             # Generate the .env file with AWS credentials
