@@ -43,3 +43,17 @@ jobs:
         --deployment-config-name CodeDeployDefault.AllAtOnce
         --deployment-group-name aws-fastapi-group
         --s3-location bucket=de1-1-backend,bundleType=tgz,key=backend_folder/RecruitRadar.tar.gz
+    
+    # EC2 인스턴스에 SSH하여 Docker를 실행 -> 진행 중
+    # docker build -t your-image-name .
+    # docker run -d -p 80:80 your-image-name
+    - name: SSH into EC2 and run Docker
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+            cd /home/ubuntu/scraper_server
+            docker compose up -d
+ 
