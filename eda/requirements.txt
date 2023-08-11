@@ -1,0 +1,4 @@
+jupyter==1.0.0
+matplotlib==3.7.2
+kiwipiepy==0.15.2
+pandas==2.0.3

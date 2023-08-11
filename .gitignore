@@ -1,5 +1,6 @@
 test/*
 rallit_scraper/data/*
+wanted_scraper/data/*
 venv
 
 .DS_Store
