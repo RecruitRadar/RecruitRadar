@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: SSH and Deploy on EC2
-        uses: appleboy/ssh-action@v0.5.8  # Using a specific version for stability
+        uses: appleboy/ssh-action@v0.1.4  # Using a specific version for stability
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
@@ -55,4 +55,6 @@ jobs:
           port: 22
           script: |
             cd /home/ubuntu/scraper_server
+            chmod 777 ./Dockerfile
+            chmod 777 ./docker-compose.yml
             docker-compose up -d
