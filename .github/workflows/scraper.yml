@@ -68,4 +68,6 @@ jobs:
 
             chmod 777 ./Dockerfile
             chmod 777 ./docker-compose.yml
+            sudo docker-compose down
+            sudo docker-compose pull
             sudo docker-compose up -d
