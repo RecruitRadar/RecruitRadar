@@ -1,4 +1,0 @@
-flake8
-black
-fastapi~=0.68.1
-uvicorn

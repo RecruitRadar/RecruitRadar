@@ -79,7 +79,7 @@ with DAG(
 ) as dag:
 
     job_categories = Scraper.job_category
-
+    
     fetch_tasks = [fetch_data(job_category=job_category) for job_category in job_categories]
     
     combined_data = combine_data(*fetch_tasks)
