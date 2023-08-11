@@ -143,7 +143,7 @@ class JobPlanetScraper:
         month = str(today.month).zfill(2)
         day = str(today.day).zfill(2)
 
-        FILE_NAME = f'{bucket_name}/year={year}/month={month}/day={day}/jobplanet.json'
+        FILE_NAME = f'jobplanet/year={year}/month={month}/day={day}/jobplanet.json'
         
         s3 = boto3.client('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name=region_name)
         s3.upload_file(file_path, bucket_name, FILE_NAME)
