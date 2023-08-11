@@ -1,6 +1,7 @@
 import json
 import math
 import asyncio
+import aiohttp
 
 from datetime import datetime
 from typing import Any, Dict, List
@@ -86,3 +87,16 @@ class Scraper:
 
         self.job_descriptions.append(val)
         await asyncio.sleep(2)
+
+
+    async def main(self) -> List[Dict[str, Any]]:
+        """
+        Scraper Class의 main 함수입니다. 잡플래닛 JD 수집을 비동기로 실행합니다.
+        """
+        async with aiohttp.ClientSession() as session:
+            job_id_lists = await self.get_job_lists(session, self.base_url)
+            
+            tasks = [self.get_job_descriptions(session, self.base_url, job_id) for job_id in job_id_lists]
+            await asyncio.gather(*tasks)
+        
+        return self.job_descriptions
