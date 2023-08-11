@@ -1,59 +1,58 @@
-# This is a basic workflow to help you get started with Actions
-#############
-name: CI
+name: Continuous Integration and Deployment
 
-# Controls when the workflow will run
 on:
-  # 지정한 branch에서 push/pull_request 에 해당하는 command가 수행되면 이 workflow가 동작 합니다.
-  # 여기서는 간단히 main 브런치에서 push되면서 이 workflow가 실행 되도록 하겠습니다.
   push:
     branches: [ feat/add-hajun ]
-
-  # 이부분은 위의 trigger가 없어도 수동으로 동작 할 수 있게끔 해주는 역할을 합니다.
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
+  
+  build_and_upload:
+    name: Build and Upload to S3
     runs-on: ubuntu-latest
 
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - name: checkout release
-      uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
+      - name: Archive Repository
+        run: tar cvfz RecruitRadar.tar.gz *
 
-    - name: archive RecruitRadar
-      run: tar cvfz ./RecruitRadar.tar.gz *
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: ap-northeast-2
 
-    - name: AWS configure credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
-        aws-region: ap-northeast-2
+      - name: Upload Archive to S3
+        run: |
+          aws s3 cp RecruitRadar.tar.gz s3://de1-1-backend/backend_folder/
 
-    - name: upload to S3
-      run: aws s3 cp --region ap-northeast-2 ./RecruitRadar.tar.gz s3://de1-1-backend/backend_folder/
+      - name: Deploy with AWS CodeDeploy
+        run: |
+          aws deploy create-deployment \
+          --application-name de1-1-backend \
+          --deployment-config-name CodeDeployDefault.AllAtOnce \
+          --deployment-group-name aws-fastapi-group \
+          --s3-location bucket=de1-1-backend,bundleType=tgz,key=backend_folder/RecruitRadar.tar.gz
+  
+  deploy_to_ec2:
+    name: Deploy to EC2
+    needs: build_and_upload
+    runs-on: ubuntu-latest
 
-    - name: deploy with AWS codeDeploy
-      run: aws deploy create-deployment
-        --application-name de1-1-backend
-        --deployment-config-name CodeDeployDefault.AllAtOnce
-        --deployment-group-name aws-fastapi-group
-        --s3-location bucket=de1-1-backend,bundleType=tgz,key=backend_folder/RecruitRadar.tar.gz
-    
-    # EC2 인스턴스에 SSH하여 Docker를 실행 -> 진행 중
-    # docker build -t your-image-name .
-    # docker run -d -p 80:80 your-image-name
-    - name: SSH into EC2 and run Docker
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USERNAME }}
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: SSH and Deploy on EC2
+        uses: appleboy/ssh-action@v0.5.8  # Using a specific version for stability
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
             cd /home/ubuntu/scraper_server
-            docker compose up -d
- 
+            docker-compose up -d
