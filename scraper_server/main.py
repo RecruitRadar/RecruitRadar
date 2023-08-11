@@ -1,4 +1,4 @@
-# fastapi 
+# fastapi
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 
@@ -8,10 +8,14 @@ import os
 import time 
 from typing import List, Dict, Any
 from dotenv import load_dotenv
+import asyncio
 
 #3rd party
 from plugin.rallit_class import Scraper
+from plugin.jobplanet_class import JobPlanetScraper
 
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -36,7 +40,6 @@ async def scrape_jobs() -> Dict[str, str]:
         start_time = time.time()
         
         # The main function content from your scraper script
-        load_dotenv()
 
         bucket_name = os.getenv('bucket_name')
         access_key = os.getenv('access_key')
@@ -72,3 +75,47 @@ async def scrape_jobs() -> Dict[str, str]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/v1/scrape-jobplanet")
+async def scrape_jobs() -> Dict[str, str]:
+    try:
+        start_time = time.time()
+        
+        # The main function content from your scraper script
+
+        bucket_name = os.getenv('bucket_name')
+        access_key = os.getenv('access_key')
+        secret_key = os.getenv('secret_key')
+        region_name = "ap-northeast-2"
+
+        base_url = 'https://www.jobplanet.co.kr/'
+        
+        tasks = []
+        for category_id, category_name in JobPlanetScraper.job_category_dict.items():
+            scraper = JobPlanetScraper(base_url=base_url, category_id=category_id, category_name=category_name)
+            task = scraper.main()
+            tasks.append(task)
+
+        data_list = await asyncio.gather(*tasks)
+
+        result = []
+        for data in data_list:
+            result.extend(data)
+
+        file_path = JobPlanetScraper.save_json(result)
+        
+        JobPlanetScraper.upload_to_s3(
+            file_path = file_path,
+            bucket_name=bucket_name,
+            access_key=access_key,
+            secret_key=secret_key, 
+            region_name=region_name
+        )
+        
+        end_time = time.time()
+        scraped_time = end_time - start_time
+        print(f'took {scraped_time} seconds to scrape {len(data_list)} jobs and upload to S3')
+        
+        return {"message": f"Scraped {len(data_list)} jobs and uploaded to S3 successfully!"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

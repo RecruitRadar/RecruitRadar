@@ -2,7 +2,12 @@
 
 - 기간: 2023.08.04 ~ 2023.09.xx
 
-- 팀원
+## Team
+| **김민석** | **서대원** | **유하준** | **정희원** |
+|:---:|:---:|:---:|:---:|
+| <img src="https://github.com/kmus1232.png" width='400' /> | <img src="https://github.com/DaewonSeo.png" width='400' /> | <img src="https://github.com/HaJunYoo.png" width='400' /> | <img src="https://github.com/heewoneha.png" width='400' /> |
+
+## Rules
 
 - 각자의 이름으로 된 브랜치를 만들어서 코드를 올려주세요
 
