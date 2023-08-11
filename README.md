@@ -1,9 +1,8 @@
-# RecruitScraper
-
-- 각종 플랫폼으로부터 데이터를 스크래핑해오는 Recruit Scraper 레포입니다.
+# RecruitRadar
 
 - 기간: 2023.08.04 ~ 2023.09.xx
-- 각 플랫폼 명 폴더 안에 scraper 코드와 requirements.txt를 올려주세요 
+
+- 팀원 
 
 - 각자의 이름으로 된 브랜치를 만들어서 코드를 올려주세요
     - cd {platform_folder}
@@ -16,3 +15,47 @@
     - https://github.com/RecruitRadar/RecruitScraper/pulls 으로 이동! <br>
     - PR의 Title이나 Description은 자유롭게 적어주신 후 PR을 생성해주시면, 확인 후 Merge 합니다 :D
     - 리뷰어도 선택해주세요
+
+- 레포 구성
+    ```
+    .
+    ├── README.md
+    ├── airflow
+    │   ├── Dockerfile
+    │   ├── dags
+    │   ├── docker-compose.yaml
+    │   ├── plugins
+    │   └── requirements.txt
+    ├── scraper
+    │   ├── jobplanet_scraper
+    │   ├── rallit_scraper
+    │   ├── venv   #.gitignore add
+    │   └── wanted_crawler
+    ├── scraper_server
+    │   ├── __pycache__
+    │   ├── api
+    │   ├── main.py
+    │   ├── plugin
+    │   ├── requirements.txt
+    │   ├── server.py
+    │   ├── static
+    │   ├── tests
+    │   └── venv #.gitignore add
+    └── sql
+
+    ```
+    - scraper
+        - 각종 플랫폼으로부터 데이터를 스크래핑
+    - airflow
+        - airflow 관련 파일
+    - scraper_server
+        ```
+        python server.py
+        ```
+    - sql
+        - 데이터 웨어하우스 관련 파일
+        - 데이터베이스 관련 파일
+        - 데이터 마트 ERD
+        - 데이터베이스 스키마
+        - 데이터베이스 테이블
+        - 데이터베이스 테이블 데이터
