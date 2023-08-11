@@ -42,4 +42,4 @@ jobs:
         --application-name de1-1-backend
         --deployment-config-name CodeDeployDefault.AllAtOnce
         --deployment-group-name aws-fastapi-group
-        --s3-location bucket=de1-1-backend,bundleType=tgz,key=backend_folder/awsbeginner.tar.gz
+        --s3-location bucket=de1-1-backend,bundleType=tgz,key=backend_folder/RecruitRadar.tar.gz
