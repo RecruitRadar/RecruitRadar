@@ -1,0 +1,75 @@
+name: Continuous Integration and Deployment
+
+on:
+  push:
+    branches: [ feat/add-hajun ]
+  workflow_dispatch:
+
+jobs:
+  
+  build_and_upload:
+    name: Build and Upload to S3
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Archive Repository
+        run: tar cvfz RecruitRadar.tar.gz *
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Upload Archive to S3
+        run: |
+          aws s3 cp RecruitRadar.tar.gz s3://de1-1-backend/backend_folder/
+
+      - name: Deploy with AWS CodeDeploy
+        run: |
+          aws deploy create-deployment \
+          --application-name de1-1-backend \
+          --deployment-config-name CodeDeployDefault.AllAtOnce \
+          --deployment-group-name aws-fastapi-group \
+          --s3-location bucket=de1-1-backend,bundleType=tgz,key=backend_folder/RecruitRadar.tar.gz
+  
+  deploy_to_ec2:
+    name: Deploy to EC2
+    needs: build_and_upload
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: SSH and Deploy on EC2
+        uses: appleboy/ssh-action@master  # Using a specific version for stability
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          password: ${{ secrets.EC2_PASSWORD }}
+          port: 22
+          #   key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu
+            chmod 700 .ssh
+            chmod 640 .ssh/authorized_keys
+
+            cd /home/ubuntu/scraper_server
+
+            # Generate the .env file with AWS credentials
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY }}" > .env
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_KEY }}" >> .env
+            echo "AWS_DEFAULT_REGION=ap-northeast-2" >> .env
+            echo "BUCKET_NAME=${{ secrets.BUCKET_NAME }}" >> .env
+
+            chmod 777 ./Dockerfile
+            chmod 777 ./docker-compose.yml
+            sudo docker-compose rm -fsv
+            sudo docker-compose pull
+            sudo docker-compose up -d
+            sudo docker image prune -f

@@ -41,9 +41,9 @@ async def scrape_jobs() -> Dict[str, str]:
         
         # The main function content from your scraper script
 
-        bucket_name = os.getenv('bucket_name')
-        access_key = os.getenv('access_key')
-        secret_key = os.getenv('secret_key')
+        bucket_name = os.getenv('BUCKET_NAME')
+        access_key = os.getenv('AWS_ACCESS_KEY_ID')
+        secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         region_name = "ap-northeast-2"
 
         job_categories = Scraper.job_category

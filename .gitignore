@@ -1,4 +1,8 @@
+# workflows/*
+scraper_server.zip
+
 test/*
+test
 rallit_scraper/data/*
 wanted_scraper/data/*
 
@@ -6,6 +10,7 @@ scraper_server/static/*
 scraper_server/.env
 
 venv
+static/*
 
 .DS_Store
 credential/*

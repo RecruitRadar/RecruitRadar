@@ -1,0 +1,30 @@
+version: '3.1'
+
+services:
+  aws-ecs-fastapi:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+      args:
+        - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+        - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+        - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+        # - POSTGRES_USER=${POSTGRES_USER}
+        # - POSTGRES_PW=${POSTGRES_PW}
+        # - POSTGRES_HOST=${POSTGRES_HOST}
+        # - POSTGRES_DB=${POSTGRES_DB}
+    container_name: aws-ecs-fastapi
+    command: python server.py
+    volumes:
+      - .:/app
+    ports:
+      - 8000:8000
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      # - POSTGRES_USER=${POSTGRES_USER}
+      # - POSTGRES_PW=${POSTGRES_PW}
+      # - POSTGRES_HOST=${POSTGRES_HOST}
+      # - POSTGRES_DB=${POSTGRES_DB}
+    # bridge - connect to docker container from localhost
