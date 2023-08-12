@@ -35,7 +35,7 @@ def request_test(request: Request):
 
 
 @app.get("/api/v1/scrape-rallit")
-async def scrape_jobs() -> Dict[str, str]:
+async def rallit_scrape_jobs() -> Dict[str, str]:
     try:
         start_time = time.time()
         
@@ -76,7 +76,7 @@ async def scrape_jobs() -> Dict[str, str]:
 
 
 @app.get("/api/v1/scrape-jobplanet")
-async def scrape_jobs() -> Dict[str, str]:
+async def jobplanet_scrape_jobs() -> Dict[str, str]:
     try:
         start_time = time.time()
         
@@ -104,7 +104,7 @@ async def scrape_jobs() -> Dict[str, str]:
         file_path = JobPlanetScraper.save_json(result)
         
         JobPlanetScraper.upload_to_s3(
-            file_path = file_path,
+            file_path=file_path,
             bucket_name=bucket_name,
             access_key=access_key,
             secret_key=secret_key, 
