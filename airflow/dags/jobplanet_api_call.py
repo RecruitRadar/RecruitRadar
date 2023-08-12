@@ -35,7 +35,7 @@ with DAG(
     
     task_http_sensor_check = HttpSensor(
         task_id="http_sensor_check",
-        http_conn_id="jobplanet_job_api",
+        http_conn_id="jd_scraper_api",
         endpoint="",
         request_params={},
         response_check=lambda response: "FastAPI" in response.text,
@@ -47,7 +47,7 @@ with DAG(
     task_get_op = CustomSimpleHttpOperator(
         task_id="get_jobplanet_job_api",
         # host.docker.internal
-        http_conn_id="jobplanet_job_api",
+        http_conn_id="jd_scraper_api",
         endpoint="/api/v1/scrape-jobplanet",
         method = "GET",
         headers={"Content-Type": "application/json"},

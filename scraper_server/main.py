@@ -13,6 +13,7 @@ import asyncio
 #3rd party
 from plugin.rallit_class import Scraper
 from plugin.jobplanet_class import JobPlanetScraper
+from plugin.wanted_class import WantedScraper
 
 
 load_dotenv()
@@ -119,3 +120,43 @@ async def jobplanet_scrape_jobs() -> Dict[str, str]:
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/v1/scrape-wanted")
+async def wanted_scrape_jobs() -> Dict[str, str]:
+    try:
+        start_time = time.time()
+        
+        # The main function content from your scraper script
+
+        bucket_name = os.getenv('BUCKET_NAME')
+        access_key = os.getenv('AWS_ACCESS_KEY_ID')
+        secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+        region_name = "ap-northeast-2"
+
+        base_url = 'https://www.wanted.co.kr'
+        
+        jds_list = []
+        for category_id, category_name in WantedScraper.category.items():
+            scraper = WantedScraper(base_url=base_url, category_id=category_id, category_name=category_name)
+            jds: List[Dict[str, Any]] = await scraper.run()
+            jds_list += jds
+
+        file_path = WantedScraper.save_json(jds_list)
+        WantedScraper.upload_to_s3(
+            file_path=file_path,
+            bucket_name=bucket_name,
+            access_key=access_key,
+            secret_key=secret_key,
+            region_name=region_name)
+
+        end_time = time.time()
+        scraped_time = end_time - start_time
+
+        print(f'took {scraped_time} seconds to scrape {len(jds_list)} jobs and upload to S3')
+        
+        return {"message": f"Scraped {len(jds_list)} jobs and uploaded to S3 successfully!"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

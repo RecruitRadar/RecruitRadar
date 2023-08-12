@@ -1,15 +1,10 @@
 from airflow import DAG
-from airflow.decorators import task
-from airflow.models import Variable
-from airflow.providers.http.operators.http import SimpleHttpOperator
 from airflow.providers.http.sensors.http import HttpSensor
 from long_http_operator import CustomSimpleHttpOperator
 
-import json
 from datetime import datetime, timedelta
 import logging
-from typing import List, Dict, Any
-from datetime import date, timedelta
+
 
 def handle_response(response):
     logging.info(response.text)
@@ -31,9 +26,9 @@ default_args = {
 }
 
 with DAG(
-    'rallit_job_api_scraper_dag',
+    'wanted_job_api_scraper_dag',
     default_args=default_args,
-    description='A async user rallit_job_scraper_api call dag',
+    description='A async wanted_job_scraper_api call dag',
     start_date=datetime(2023, 8, 1),
     schedule_interval='@once',
 ) as dag:
@@ -50,10 +45,10 @@ with DAG(
     )   
     
     task_get_op = CustomSimpleHttpOperator(
-        task_id="get_rallit_job_api",
+        task_id="get_wanted_job_api",
         # host.docker.internal
         http_conn_id="jd_scraper_api",
-        endpoint="/api/v1/scrape-rallit",
+        endpoint="/api/v1/scrape-wanted",
         method = "GET",
         headers={"Content-Type": "application/json"},
         # timeout=300, --> timout --> baseoperator 상속 받아야 한다
@@ -62,7 +57,3 @@ with DAG(
     )
     
     task_http_sensor_check >> task_get_op
-    
-
-    
-    
