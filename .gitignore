@@ -6,6 +6,7 @@ test
 rallit_scraper/data/*
 wanted_scraper/data/*
 venv
+static/*
 
 .DS_Store
 credential/*
