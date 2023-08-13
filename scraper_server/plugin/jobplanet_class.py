@@ -159,7 +159,7 @@ class JobPlanetScraper:
         """
         file_path = "./static/jobplanet.json"
         
-        result = {'results': total_job_descriptions}
+        result = {'result': total_job_descriptions}
 
         with open(file_path, "w", encoding='utf-8') as json_file:
             json.dump(result, json_file, ensure_ascii=False, indent=4)
