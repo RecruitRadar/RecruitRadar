@@ -1,8 +1,11 @@
 # RecruitRadar
 
-- 기간: 2023.08.04 ~ 2023.09.xx
+채용 공고 데이터 파이프라인 구축을 통한 개발 스택 트렌드 분석
+
+기간: 2023.08.04 ~ 2023.09.xx
 
 ## Team
+
 | **김민석** | **서대원** | **유하준** | **정희원** |
 |:---:|:---:|:---:|:---:|
 | <img src="https://github.com/kmus1232.png" width='400' /> | <img src="https://github.com/DaewonSeo.png" width='400' /> | <img src="https://github.com/HaJunYoo.png" width='400' /> | <img src="https://github.com/heewoneha.png" width='400' /> |
@@ -22,6 +25,8 @@
   - https://github.com/RecruitRadar/RecruitScraper/pulls 으로 이동! <br>
   - PR의 Title이나 Description은 자유롭게 적어주신 후 PR을 생성해주시면, 확인 후 Merge 합니다 :D
   - 리뷰어도 선택해주세요
+
+## Usage
 
 - 레포 구성
 
