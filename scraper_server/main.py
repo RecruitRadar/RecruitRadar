@@ -37,7 +37,7 @@ REGION_NAME = "ap-northeast-2"
 
 
 @app.get("/")
-def request_test(request: Request):
+async def request_test(request: Request):
     return {"message": "Hello World - FastAPI world"}
 
 
