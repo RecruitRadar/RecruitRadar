@@ -1,6 +1,8 @@
 # workflows/*
 scraper_server.zip
 
+
+
 test/*
 test
 rallit_scraper/data/*
@@ -95,6 +97,11 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+.ipython
+.jupyter
+.debugger_*
+.local 
+
 
 # IPython
 profile_default/
