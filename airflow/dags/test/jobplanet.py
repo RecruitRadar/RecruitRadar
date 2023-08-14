@@ -23,7 +23,7 @@ def get_not_duplicated_jd(total_job_descriptions: List[Dict[str, Any]]) -> List[
             unique_job_descriptions.append(item)
             seen_job_ids.add(item['job_id'])
 
-    result = {'results': unique_job_descriptions}
+    result = {'result': unique_job_descriptions}
 
     return result
 
