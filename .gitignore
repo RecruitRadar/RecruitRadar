@@ -1,3 +1,6 @@
+.ssh
+*.pem
+
 # workflows/*
 scraper_server.zip
 
@@ -12,6 +15,7 @@ scraper_server/static/*
 scraper_server/.env
 
 venv
+.venv
 static/*
 
 .DS_Store
