@@ -1,5 +1,10 @@
+.ssh
+*.pem
+
 # workflows/*
 scraper_server.zip
+
+
 
 test/*
 test
@@ -10,6 +15,7 @@ scraper_server/static/*
 scraper_server/.env
 
 venv
+.venv
 static/*
 
 .DS_Store
@@ -95,6 +101,15 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+.ipython
+.jupyter
+.debugger_*
+.local 
+.npm
+.config
+.bash_history
+.python_history
+
 
 # IPython
 profile_default/

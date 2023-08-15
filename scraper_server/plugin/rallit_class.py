@@ -142,7 +142,7 @@ class Scraper:
         """Saves the provided list of data to a JSON file."""
         folder = 'static'
         filename = 'rallit.json'
-        json_data = {'result': data_list}
+        json_data = {'results': data_list}
         file_path = os.path.join(folder, filename)
         with open(file_path, 'w', encoding='utf-8') as json_file:
             json.dump(json_data, json_file, ensure_ascii=False, indent=4)
