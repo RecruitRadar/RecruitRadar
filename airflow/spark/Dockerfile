@@ -1,7 +1,7 @@
 # 기본 이미지 설정
-# spark-3.3.2-bin-hadoop3/
-# spark 3.3.2, scala 2.12 
-FROM jupyter/all-spark-notebook:spark-3.3.2
+# spark-3.3.1-bin-hadoop3/
+# spark 3.3.1, scala 2.12 
+FROM jupyter/all-spark-notebook:spark-3.3.1
 
 # root 사용자로 전환
 USER root
@@ -31,7 +31,6 @@ RUN echo "root:root" | chpasswd  # setting password for root as 'root'
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
 
-
 # Scala 2.12.14 및 sbt 설치
 RUN wget https://downloads.lightbend.com/scala/2.12.14/scala-2.12.14.deb && \
     dpkg -i scala-2.12.14.deb && \
@@ -41,7 +40,6 @@ RUN wget https://downloads.lightbend.com/scala/2.12.14/scala-2.12.14.deb && \
     tar xzvf sbt-1.5.5.tgz && \
     mv sbt /usr/local && \
     echo "export PATH=/usr/local/sbt/bin:$PATH" >> /etc/bash.bashrc
-
 
 
 # JDBC 드라이버 다운로드
