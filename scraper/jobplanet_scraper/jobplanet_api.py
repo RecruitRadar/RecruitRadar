@@ -107,7 +107,7 @@ class Scraper:
                 unique_job_descriptions.append(item)
                 seen_job_ids.add(item['job_id'])
 
-        result = {'result': unique_job_descriptions}
+        result = {'results': unique_job_descriptions}
 
         with open(file_path, "w", encoding='utf-8') as json_file:
             json.dump(result, json_file, ensure_ascii=False, indent=4)
