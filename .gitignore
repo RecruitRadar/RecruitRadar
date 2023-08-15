@@ -101,6 +101,10 @@ target/
 .jupyter
 .debugger_*
 .local 
+.npm
+.config
+.bash_history
+.python_history
 
 
 # IPython
