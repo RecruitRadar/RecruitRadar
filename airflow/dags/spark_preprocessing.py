@@ -28,7 +28,7 @@ start = DummyOperator(task_id="start", dag=dag)
 
 # SparkSubmitOperator를 사용하여 Spark 작업 실행
 spark_app_name = "SparkPreprocessingJob"  # Spark 애플리케이션 이름
-spark_master = "spark://spark:7077" # Spark 마스터 URL
+# spark_master = "spark://spark:7077" # Spark 마스터 URL
 
 spark_job = SparkSubmitOperator(
     task_id="spark_job",
@@ -36,7 +36,7 @@ spark_job = SparkSubmitOperator(
     name=spark_app_name,
     conn_id="spark_default",
     verbose=1,
-    conf={"spark.master": spark_master},
+    # conf={"spark.master": spark_master},
     dag=dag
 )
 
