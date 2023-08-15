@@ -3,7 +3,7 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import regexp_replace
 from pyspark.sql.types import StringType, StructField, StructType, ArrayType, FloatType
 from pyspark.sql import functions as F
-from pyspark.sql.functions import monotonically_increasing_id
+from pyspark.sql.functions import monotonically_increasing_id, col
 import os
 import json
 import boto3
@@ -235,8 +235,10 @@ def main():
     result_with_id_df = df_final_with_id.join(
         df_with_coordinate, on='id', how='left'
     )
+    
+    result_with_id_df = result_with_id_df.withColumn('coordinate', col('coordinate_y'))
 
-    result_df = result_with_id_df.drop('id')
+    result_df = result_with_id_df.select([col for col in new_columns])
 
     output_path = "data/1st_cleaned_data.parquet"
     result_df.write.parquet(output_path, mode="overwrite")
