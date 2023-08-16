@@ -3,7 +3,6 @@ from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import regexp_replace
 from pyspark.sql.types import StringType, StructField, StructType, ArrayType, FloatType
 from pyspark.sql import functions as F
-from pyspark.sql.functions import monotonically_increasing_id, col
 import os
 import json
 import boto3
@@ -225,20 +224,13 @@ def main():
     text_columns = ['preferred', 'required', 'primary_responsibility', 'welfare', 'company_description']
     df_final = spark_preprocessor.process_text_columns(df_with_mapped_categories, text_columns)
 
-    df_final_with_id = df_final.withColumn('id', monotonically_increasing_id())
-
-    df_filter_for_coordinate = df_final_with_id.filter((df_final_with_id['platform'] == 'jobplanet') | (df_final_with_id['platform'] == 'jumpit'))
+    df_filter_for_wanted_rallit = df_final.filter((df_final['platform'] == 'wanted') | (df_final['platform'] == 'rallit'))
+    df_filter_for_jobplanet_jumpit = df_final.filter((df_final['platform'] == 'jobplanet') | (df_final['platform'] == 'jumpit'))
     
     get_coordinate_udf = F.udf(spark_preprocessor.get_coordinate_from_location, ArrayType(FloatType()))
-    df_with_coordinate = df_filter_for_coordinate.withColumn('coordinate', get_coordinate_udf(df_filter_for_coordinate['location']))
+    df_with_coordinate = df_filter_for_jobplanet_jumpit.withColumn('coordinate', get_coordinate_udf(df_filter_for_jobplanet_jumpit['location']))
 
-    result_with_id_df = df_final_with_id.join(
-        df_with_coordinate, on='id', how='left'
-    )
-    
-    result_with_id_df = result_with_id_df.withColumn('coordinate', col('coordinate_y'))
-
-    result_df = result_with_id_df.select([col for col in new_columns])
+    result_df = df_filter_for_wanted_rallit.union(df_with_coordinate)
 
     output_path = "data/1st_cleaned_data.parquet"
     result_df.write.parquet(output_path, mode="overwrite")
@@ -251,7 +243,7 @@ def main():
     uploader.upload_file('1st_cleaned_data')
 
     print('Upload Finish')
-    
+
 
 if __name__ == "__main__":
     main()
