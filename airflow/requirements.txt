@@ -1,4 +1,6 @@
 psycopg2-binary
 pandas
 numpy
+python-dotenv
+boto3
 apache-airflow-providers-apache-spark[cncf.kubernetes]

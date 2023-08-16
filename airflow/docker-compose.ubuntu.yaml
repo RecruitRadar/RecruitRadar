@@ -85,7 +85,9 @@ x-airflow-common:
 services:
 
   spark:
-    image: docker.io/bitnami/spark:3.3
+    build: 
+      context: ./spark
+      dockerfile: Dockerfile.cluster
     environment:
       - SPARK_MODE=master
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
@@ -96,11 +98,14 @@ services:
     ports:
       - '8181:8080'
       - '7077:7077'
+      - "4040-4045:4040-4045"
     networks:
     - app-tier
 
   spark-worker-1:
-    image: docker.io/bitnami/spark:3.3
+    build: 
+      context: ./spark
+      dockerfile: Dockerfile.cluster
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark:7077
@@ -119,7 +124,9 @@ services:
       - spark
 
   spark-worker-2:
-    image: docker.io/bitnami/spark:3.3
+    build: 
+      context: ./spark
+      dockerfile: Dockerfile.cluster
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark:7077
@@ -138,13 +145,18 @@ services:
       - spark
 
   spark-jupyter:
-    build: ./spark 
+    build: 
+      context: ./spark
+      dockerfile: Dockerfile.jupyter
     ports:
       - "8888:8888"
       # - "4041:4041"
-      - "4040-4080:4040-4080"
       # - "9999:9999"
     environment:
+      - PYSPARK_PYTHON=/usr/bin/python3
+      - PYSPARK_DRIVER_PYTHON=ipython
+      - PYSPARK_DRIVER_PYTHON_OPTS=notebook
+      - MASTER=spark://spark:7077
       - PYSPARK_SUBMIT_ARGS="--master spark://spark:7077 pyspark-shell"
     restart: always
     volumes:
