@@ -2,7 +2,6 @@ from typing import List
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import regexp_replace
 from pyspark.sql.types import StringType, StructField, StructType, ArrayType, FloatType
-from pyspark.sql import functions as F
 import os
 import json
 import boto3
@@ -11,7 +10,7 @@ import requests
 from botocore.exceptions import NoCredentialsError
 from dotenv import load_dotenv
 from datetime import date
-
+from pyspark.sql.functions import udf
 
 load_dotenv()
 
@@ -36,34 +35,14 @@ class S3Downloader:
 
 
 class Preprocessing:
-    def __init__(self, kakao_api_token):
+    def __init__(self):
         self.spark = SparkSession.builder.appName("Python Spark preprocessing #1").master("local").getOrCreate()
-        self.headers = {'Authorization': 'KakaoAK ' + kakao_api_token}
-    
-    def get_coordinate_from_location(self, location: str) -> List[float]:
-        """
-        카카오 API를 통해 location으로부터 coordinate(lat, lon) 리스트를 반환합니다.
-        """
-        if location is None:
-            return None
-        
-        url = f'https://dapi.kakao.com/v2/local/search/address.json?query={location}'
-        
-        try:
-            response = requests.get(url, headers=self.headers, timeout=5)
-            result = json.loads(response.text)
-            match_first = result['documents'][0]['address']
-            return [float(match_first['y']), float(match_first['x'])]
-
-        except (requests.exceptions.RequestException, TypeError, ValueError, KeyError, IndexError) as e:
-            print(f'Error occurred: {e} while fetching address: {location}')
 
     def read_json_files(self, file_paths: List[str]) -> DataFrame:
         data = []
         for path in file_paths:
             with open(path) as json_file:
                 json_data = json.load(json_file)
-                # 키 이름 변경
                 if "results" in json_data:
                     data.append(path)
         
@@ -152,6 +131,28 @@ def main():
     SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
     KAKAO_API_TOKEN = os.getenv('KAKAO_API_TOKEN')
 
+    headers = {'Authorization': 'KakaoAK ' + KAKAO_API_TOKEN}
+
+    @udf(returnType=ArrayType(FloatType()))
+    def get_coordinate_from_location(location):
+        """
+        카카오 API를 통해 location으로부터 coordinate(lat, lon) 리스트를 반환합니다.
+        """
+        if location is None:
+            return None
+        
+        url = f'https://dapi.kakao.com/v2/local/search/address.json?query={location}'
+        
+        try:
+            response = requests.get(url, headers=headers, timeout=5)
+            result = json.loads(response.text)
+            match_first = result['documents'][0]['address']
+            return [float(match_first['y']), float(match_first['x'])]
+
+        except (requests.exceptions.RequestException, TypeError, ValueError, KeyError, IndexError) as e:
+            print(f'Error occurred: {e} while fetching address: {location}')
+
+    
     downloader = S3Downloader(BUCKET_NAME, ACCESS_KEY, SECRET_KEY)
 
     os.makedirs('data', exist_ok=True)
@@ -160,8 +161,8 @@ def main():
     for platform in platform_list:
         json_file_path = get_file_path(platform,'json')
         downloader.download_file(json_file_path, f'data/{platform}.json')
-
-    spark_preprocessor = Preprocessing(KAKAO_API_TOKEN)
+    
+    spark_preprocessor = Preprocessing()
 
     file_paths = glob.glob(f'{os.getcwd()}/data/*.json')
 
@@ -226,9 +227,8 @@ def main():
 
     df_filter_for_wanted_rallit = df_final.filter((df_final['platform'] == 'wanted') | (df_final['platform'] == 'rallit'))
     df_filter_for_jobplanet_jumpit = df_final.filter((df_final['platform'] == 'jobplanet') | (df_final['platform'] == 'jumpit'))
-    
-    get_coordinate_udf = F.udf(spark_preprocessor.get_coordinate_from_location, ArrayType(FloatType()))
-    df_with_coordinate = df_filter_for_jobplanet_jumpit.withColumn('coordinate', get_coordinate_udf(df_filter_for_jobplanet_jumpit['location']))
+
+    df_with_coordinate = df_filter_for_jobplanet_jumpit.withColumn('coordinate', get_coordinate_from_location('location'))
 
     result_df = df_filter_for_wanted_rallit.union(df_with_coordinate)
 
@@ -237,13 +237,9 @@ def main():
 
     spark_preprocessor.stop_spark_session()
     
-    print('Spark Finish')
-
     uploader = S3Uploader(BUCKET_NAME, ACCESS_KEY, SECRET_KEY)
     uploader.upload_file('1st_cleaned_data')
-
-    print('Upload Finish')
-
+    
 
 if __name__ == "__main__":
     main()
