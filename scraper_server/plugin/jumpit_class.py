@@ -146,7 +146,7 @@ class JumpitScraper:
         filename = 'jumpit.json'
 
         # JSON 파일로 저장
-        json_data = {'result': data_list}
+        json_data = {'results': data_list}
         file_path = os.path.join(folder, filename)
 
         with open(os.path.join(folder, filename), 'w', encoding='utf-8') as json_file:
