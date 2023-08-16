@@ -210,7 +210,7 @@ class WantedScraper:
         if not os.path.exists(folder_name):
             os.mkdir(folder_name) 
         file_name = "wanted.json"
-        json_data = {'result': jobs}
+        json_data = {'results': jobs}
         file_path = os.path.join(folder_name, file_name)
         with open(file_path, "w", encoding='utf-8') as json_file:
             json.dump(json_data, json_file, ensure_ascii=False, indent=4)
