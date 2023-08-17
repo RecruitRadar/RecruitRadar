@@ -1,0 +1,67 @@
+# 기본 이미지 설정
+# spark-3.3.1-bin-hadoop3/
+# spark 3.3.1, scala 2.12 
+# Using Spark 3.3.2 based Jupyter image
+FROM jupyter/all-spark-notebook:spark-3.3.2
+
+# Variables
+ENV GRANT_SUDO=yes \
+    JUPYTER_ENABLE_LAB=yes \
+    SCALA_VERSION=2.12.14 \
+    SBT_VERSION=1.5.5 \
+    PYSPARK_VERSION=3.3.2 \
+    PY4J_VERSION=0.10.9.5
+
+# System package installations and configurations
+USER root
+
+RUN groupadd jovyan && \
+    usermod -a -G jovyan jovyan && \
+    echo "jovyan ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    echo "jovyan:jovyan" | chpasswd && \
+    apt-get update -y && \
+    apt-get install -y wget default-jdk netcat openssh-server && \
+    ssh-keygen -A && \
+    echo "root:root" | chpasswd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Scala and SBT installations
+RUN wget https://downloads.lightbend.com/scala/$SCALA_VERSION/scala-$SCALA_VERSION.deb && \
+    dpkg -i scala-$SCALA_VERSION.deb && \
+    apt-get update && \
+    apt-get install -y scala && \
+    wget https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz && \
+    tar xzvf sbt-$SBT_VERSION.tgz && \
+    mv sbt /usr/local && \
+    echo "export PATH=/usr/local/sbt/bin:$PATH" >> /etc/bash.bashrc
+
+# Python package installations
+RUN pip install --no-cache-dir spylon-kernel pyspark==$PYSPARK_VERSION py4j==$PY4J_VERSION python-dotenv boto3 && \
+    python -m spylon_kernel install
+
+# Set user back to jovyan
+USER jovyan
+
+# Expose ports and set working directory
+EXPOSE 8888 4040 9999 22
+WORKDIR /home/jovyan
+VOLUME /home/jovyan
+
+# Start Jupyter notebook
+CMD ["start-notebook.sh"]
+
+
+# JDBC 드라이버 다운로드
+# RUN cd /usr/local/spark-3.3.1-bin-hadoop3/jars && \
+#     if [ ! -f redshift-jdbc42-2.1.0.14.jar ]; then \
+#         if ! wget -P /usr/local/spark-3.3.1-bin-hadoop3/jars https://s3.amazonaws.com/redshift-downloads/drivers/jdbc/2.1.0.14/redshift-jdbc42-2.1.0.14.jar; then \
+#             echo "Failed to download Redshift JDBC driver"; \
+#         fi \
+#     else \
+#         echo "Redshift JDBC driver already exists"; \
+#     fi
+
+# # jars 디렉토리의 소유권을 jovyan에게 변경
+# RUN chown -R jovyan:jovyan /usr/local/spark-3.3.1-bin-hadoop3/jars
