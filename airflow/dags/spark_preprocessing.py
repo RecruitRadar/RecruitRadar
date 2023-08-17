@@ -32,7 +32,7 @@ spark_app_name = "SparkPreprocessingJob"  # Spark 애플리케이션 이름
 
 spark_job = SparkSubmitOperator(
     task_id="spark_job",
-    application= "/opt/airflow/dags/spark/first-preprocessing.py" , # Spark 애플리케이션 경로" /home/jovyan/first-preprocessing.py",
+    application= "/opt/airflow/dags/spark/temp.py" , # Spark 애플리케이션 경로" /home/jovyan/first-preprocessing.py",
     name=spark_app_name,
     conn_id="spark_default",
     verbose=1,
