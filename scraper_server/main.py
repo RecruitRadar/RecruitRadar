@@ -5,10 +5,12 @@ from fastapi.staticfiles import StaticFiles
 # built-in
 from pathlib import Path
 import os
+import json
 import time
-from typing import List, Dict, Any
-from dotenv import load_dotenv
+import boto3
 import asyncio
+from typing import List, Dict, Any
+from botocore.exceptions import ClientError
 
 #3rd party
 from plugin.rallit_class import Scraper
@@ -16,8 +18,6 @@ from plugin.jobplanet_class import JobPlanetScraper
 from plugin.wanted_class import WantedScraper
 from plugin.jumpit_class import JumpitScraper
 
-
-load_dotenv()
 
 app = FastAPI()
 
@@ -30,10 +30,38 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # main.py의 위치
 BASE_DIR = Path(__file__).resolve().parent
 
-BUCKET_NAME = os.getenv('BUCKET_NAME')
-ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
-SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-REGION_NAME = "ap-northeast-2"
+
+def get_secret():
+    """
+    AWS Secrets Manager를 이용해 환경변수를 불러옵니다.
+    """
+    secret_name = "prod/de-1-1/back-end"
+    REGION_NAME = "ap-northeast-2"
+
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=REGION_NAME
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        raise e
+
+    secret = get_secret_value_response['SecretString']
+    secret_dict = json.loads(secret)
+
+    BUCKET_NAME = secret_dict['BUCKET_NAME']
+    ACCESS_KEY = secret_dict['AWS_ACCESS_KEY_ID']
+    SECRET_KEY = secret_dict['AWS_SECRET_ACCESS_KEY']
+
+    return BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME
+
+
+BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME = get_secret()
 
 
 @app.get("/")
@@ -45,8 +73,6 @@ async def request_test(request: Request):
 async def rallit_scrape_jobs() -> Dict[str, str]:
     try:
         start_time = time.time()
-
-        # The main function content from your scraper script
 
         job_categories = Scraper.job_category
 
