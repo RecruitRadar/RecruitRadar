@@ -30,6 +30,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # main.py의 위치
 BASE_DIR = Path(__file__).resolve().parent
 
+
 def get_secret():
     """
     AWS Secrets Manager를 이용해 환경변수를 불러옵니다.
@@ -60,6 +61,9 @@ def get_secret():
     return BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME
 
 
+BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME = get_secret()
+
+
 @app.get("/")
 async def request_test(request: Request):
     return {"message": "Hello World - FastAPI world"}
@@ -69,7 +73,6 @@ async def request_test(request: Request):
 async def rallit_scrape_jobs() -> Dict[str, str]:
     try:
         start_time = time.time()
-        BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME = get_secret()
 
         job_categories = Scraper.job_category
 
@@ -104,7 +107,6 @@ async def rallit_scrape_jobs() -> Dict[str, str]:
 async def jobplanet_scrape_jobs() -> Dict[str, str]:
     try:
         start_time = time.time()
-        BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME = get_secret()
 
         base_url = 'https://www.jobplanet.co.kr/'
 
@@ -144,7 +146,6 @@ async def jobplanet_scrape_jobs() -> Dict[str, str]:
 async def wanted_scrape_jobs() -> Dict[str, str]:
     try:
         start_time = time.time()
-        BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME = get_secret()
 
         base_url = 'https://www.wanted.co.kr'
 
@@ -177,7 +178,6 @@ async def wanted_scrape_jobs() -> Dict[str, str]:
 async def jumpit_scrape_jobs() -> Dict[str, str]:
     try:
         start_time = time.time()
-        BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME = get_secret()
 
         tasks = []
         for category_id, category_name in JumpitScraper.job_category_dict.items():

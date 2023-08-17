@@ -2,3 +2,4 @@ psycopg2-binary
 pandas
 numpy
 apache-airflow-providers-apache-spark[cncf.kubernetes]
+awscli

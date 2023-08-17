@@ -1,22 +1,54 @@
-from typing import List
-from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.functions import regexp_replace
-from pyspark.sql.types import StringType, StructField, StructType, ArrayType, FloatType
 import os
 import json
 import boto3
 import glob
 import requests
-from botocore.exceptions import NoCredentialsError
-from dotenv import load_dotenv
+from typing import List
 from datetime import date
+from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.functions import regexp_replace
+from pyspark.sql.types import StringType, StructField, StructType, ArrayType, FloatType
 from pyspark.sql.functions import udf
+from botocore.exceptions import NoCredentialsError
+from botocore.exceptions import ClientError
 
-load_dotenv()
+
+def get_secret():
+    """
+    AWS Secrets Manager를 이용해 환경변수를 불러옵니다.
+    """
+    secret_name = "prod/de-1-1/back-end"
+    REGION_NAME = "ap-northeast-2"
+
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=REGION_NAME
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        raise e
+
+    secret = get_secret_value_response['SecretString']
+    secret_dict = json.loads(secret)
+
+    BUCKET_NAME = secret_dict['BUCKET_NAME']
+    ACCESS_KEY = secret_dict['AWS_ACCESS_KEY_ID']
+    SECRET_KEY = secret_dict['AWS_SECRET_ACCESS_KEY']
+    KAKAO_API_TOKEN = secret_dict['KAKAO_API_TOKEN']
+
+    return BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME, KAKAO_API_TOKEN
+
+
+BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME, KAKAO_API_TOKEN = get_secret()
 
 
 class S3Downloader:
-    def __init__(self, bucket_name, access_key, secret_key):
+    def __init__(self, bucket_name, access_key, secret_key, region_name):
         self.bucket_name = bucket_name
         self.access_key = access_key
         self.secret_key = secret_key
@@ -24,7 +56,7 @@ class S3Downloader:
             's3',
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
-            region_name="ap-northeast-2"
+            region_name=region_name
         )
 
     def download_file(self, remote_path, local_path):
@@ -82,7 +114,7 @@ class Preprocessing:
 
 
 class S3Uploader:
-    def __init__(self, bucket_name, access_key, secret_key):
+    def __init__(self, bucket_name, access_key, secret_key, region_name):
         self.bucket_name = bucket_name
         self.access_key = access_key
         self.secret_key = secret_key
@@ -90,7 +122,7 @@ class S3Uploader:
             's3',
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
-            region_name="ap-northeast-2"
+            region_name=region_name
         )
     
     def upload_file(self, platform_name):
@@ -126,11 +158,6 @@ def get_file_path(platform_name: str, file_type: str) -> str:
 
 
 def main():
-    BUCKET_NAME = os.getenv('BUCKET_NAME')
-    ACCESS_KEY = os.getenv('AWS_ACCESS_KEY_ID')
-    SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-    KAKAO_API_TOKEN = os.getenv('KAKAO_API_TOKEN')
-
     headers = {'Authorization': 'KakaoAK ' + KAKAO_API_TOKEN}
 
     @udf(returnType=ArrayType(FloatType()))
@@ -153,7 +180,7 @@ def main():
             print(f'Error occurred: {e} while fetching address: {location}')
 
     
-    downloader = S3Downloader(BUCKET_NAME, ACCESS_KEY, SECRET_KEY)
+    downloader = S3Downloader(BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME)
 
     os.makedirs('data', exist_ok=True)
 
@@ -237,7 +264,7 @@ def main():
 
     spark_preprocessor.stop_spark_session()
     
-    uploader = S3Uploader(BUCKET_NAME, ACCESS_KEY, SECRET_KEY)
+    uploader = S3Uploader(BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME)
     uploader.upload_file('1st_cleaned_data')
     
 
