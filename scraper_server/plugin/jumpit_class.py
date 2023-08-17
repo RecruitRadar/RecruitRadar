@@ -9,7 +9,6 @@ import asyncio
 import random
 import boto3
 from datetime import date, datetime
-from dotenv import load_dotenv
 
 
 class JumpitScraper:
