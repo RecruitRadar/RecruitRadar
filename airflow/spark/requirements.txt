@@ -1,0 +1,7 @@
+psycopg2-binary
+pandas
+numpy
+python-dotenv
+boto3
+pyspark==3.3.2
+py4j==0.10.9.5

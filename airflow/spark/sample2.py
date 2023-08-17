@@ -2,7 +2,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, ArrayType
 
 # SparkSession 초기화
-spark = SparkSession.builder.appName("ExampleApp2").master("local").getOrCreate()
+spark = SparkSession.builder.appName("ExampleApp2").master("spark://spark:7077").getOrCreate()
 
 # 데이터 정의
 arrayStructureData = [

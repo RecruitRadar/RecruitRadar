@@ -26,7 +26,7 @@ class S3Downloader:
 
 class Preprocessing:
     def __init__(self):
-        self.spark = SparkSession.builder.appName("Python Spark preprocessing #1").master("local").getOrCreate()
+        self.spark = SparkSession.builder.appName("Python Spark preprocessing #1").master("spark://spark:7077").getOrCreate()
 
     def read_json_files(self, file_paths: List[str]) -> DataFrame:
         data = []
