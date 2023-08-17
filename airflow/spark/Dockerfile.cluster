@@ -10,5 +10,12 @@ COPY ./requirements.txt /opt/bitnami/spark/work-dir/
 
 WORKDIR /opt/bitnami/spark/work-dir/
 
+RUN chmod -R 777 /opt/bitnami/spark/work-dir/
+
 # requirements.txt에 명시된 패키지들 설치
 RUN pip install --no-cache-dir -r requirements.txt
+
+# spark workers were executing under user ID 1001.
+USER 1001
+
+
