@@ -58,7 +58,18 @@ class S3Downloader:
             aws_secret_access_key=secret_key,
             region_name=region_name
         )
+    
+    def get_file_path(self, platform_name: str) -> str:
+        """
+        s3_key가 될 remote_path를 생성합니다.
+        """
+        today = date.today()
+        year = str(today.year)
+        month = str(today.month).zfill(2)
+        day = str(today.day).zfill(2)
 
+        return f'{platform_name}/year={year}/month={month}/day={day}/{platform_name}.json'
+    
     def download_file(self, remote_path, local_path):
         try:
             self.s3.download_file(self.bucket_name, remote_path, local_path)
@@ -124,37 +135,50 @@ class S3Uploader:
             aws_secret_access_key=secret_key,
             region_name=region_name
         )
-    
-    def upload_file(self, platform_name):
-        """
-        1차 전처리된 최종 parquet 파일을 s3에 업로드합니다.
-        """
-        s3_key = get_file_path(platform_name, 'parquet')
 
-        folder_path = f'data/{platform_name}.parquet'
+    def upload_file(self):
+        """
+        1차 전처리된 최종 parquet 파일 및 parquet crc 파일을 s3에 업로드합니다.
+        """
+        today = date.today()
+        year = str(today.year)
+        month = str(today.month).zfill(2)
+        day = str(today.day).zfill(2)
+
+        remote_path = f'1st_cleaned_data/year={year}/month={month}/day={day}'
+
+        folder_path = f'data/1st_cleaned_data'
 
         for root, _, files in os.walk(folder_path):
             for file in files:
                 local_path = os.path.join(root, file)
-                s3_path = os.path.relpath(local_path, folder_path)
-                result_s3_key = f"{s3_key}/{s3_path}"
+                result_remote_path = f"{remote_path}/{file}"
                 
                 try:
-                    self.s3.upload_file(local_path, self.bucket_name, result_s3_key)
+                    self.s3.upload_file(local_path, self.bucket_name, result_remote_path)
                 except NoCredentialsError:
                     raise Exception("AWS credentials not available")
-        
+    
+    def delete_crc_files(self):
+        """
+        s3에 올라간 parquet crc 파일을 제거합니다.
+        """
+        today = date.today()
+        year = str(today.year)
+        month = str(today.month).zfill(2)
+        day = str(today.day).zfill(2)
 
-def get_file_path(platform_name: str, file_type: str) -> str:
-    """
-    s3_key가 될 file_path를 생성합니다.
-    """
-    today = date.today()
-    year = str(today.year)
-    month = str(today.month).zfill(2)
-    day = str(today.day).zfill(2)
+        remote_path = f'1st_cleaned_data/year={year}/month={month}/day={day}'
 
-    return f'{platform_name}/year={year}/month={month}/day={day}/{platform_name}.{file_type}'
+        response = self.s3.list_objects(Bucket=self.bucket_name, Prefix=remote_path)
+
+        for obj in response.get('Contents', []):
+            file_key = obj['Key']
+            if file_key.endswith('.crc'):
+                try:
+                    self.s3.delete_object(Bucket=self.bucket_name, Key=file_key)
+                except NoCredentialsError:
+                    raise Exception("AWS credentials not available")
 
 
 def main():
@@ -186,10 +210,11 @@ def main():
 
     platform_list = ['jobplanet', 'jumpit', 'rallit', 'wanted']
     for platform in platform_list:
-        json_file_path = get_file_path(platform,'json')
+        json_file_path = downloader.get_file_path(platform)
         downloader.download_file(json_file_path, f'data/{platform}.json')
     
     spark_preprocessor = Preprocessing()
+    spark_preprocessor.spark.conf.set("mapreduce.fileoutputcommitter.marksuccessfuljobs", "false")
 
     file_paths = glob.glob(f'{os.getcwd()}/data/*.json')
 
@@ -259,14 +284,17 @@ def main():
 
     result_df = df_filter_for_wanted_rallit.union(df_with_coordinate)
 
-    output_path = "data/1st_cleaned_data.parquet"
-    result_df.write.parquet(output_path, mode="overwrite")
+    result_repartitioned_df = result_df.repartition(1)
+
+    output_path = "data/1st_cleaned_data"
+    result_repartitioned_df.write.parquet(output_path, mode="overwrite")
 
     spark_preprocessor.stop_spark_session()
-    
+
     uploader = S3Uploader(BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME)
-    uploader.upload_file('1st_cleaned_data')
-    
+    uploader.upload_file()
+    uploader.delete_crc_files()
+
 
 if __name__ == "__main__":
     main()
