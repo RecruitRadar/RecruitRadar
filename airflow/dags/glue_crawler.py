@@ -4,6 +4,8 @@ import boto3
 from airflow import DAG
 from airflow.models import Variable
 from airflow.decorators import task
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+
 
 DEFAULT_ARGS = {
     'owner': 'jd_analysis',
@@ -27,15 +29,21 @@ with DAG('glue_crawler_dag',
          default_args=DEFAULT_ARGS) as dag:
     
     @task()
-    def start_crawler(crawler_name:str) -> None:
+    def start_crawler(crawler_name:str) -> str:
         access_key = get_airflow_variable_or_default("access_key")
         secret_key = get_airflow_variable_or_default("secret_key")
         region_name = get_airflow_variable_or_default("region_name")
         glue_client = boto3.client('glue', aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name=region_name)
         glue_client.start_crawler(Name=crawler_name)
-    
+        
+        message = f"Start crawler: {crawler_name}"
+        print(f"Start crawler: {crawler_name}")
+        
+        return message
+
+        
     @task()
-    def check_crawler_status(crawler_name:str) -> None:
+    def check_crawler_status(crawler_name:str) -> str:
         '''
         avoid READY, RUNNING, STOPPING status
         '''
@@ -58,8 +66,34 @@ with DAG('glue_crawler_dag',
             
             else:
                 print(f"Current status: {response}")
-                return None 
+                return f"Current status: {response}" 
+    
+    @task()
+    def log_final_message() -> None:
+        print("All crawlers have completed successfully!")
+    
+    
+    
+    trigger_etl_dag_task = TriggerDagRunOperator(
+        task_id='trigger_glue_etl_dag',
+        trigger_dag_id="glue_etl_job_dag",  # 여기에 트리거링하려는 DAG의 ID를 지정합니다.
+        conf={"message": "Triggered from glue_crawler_dag"},
+        execution_date="{{ ds }}", # 여기에 트리거링하려는 DAG의 execution_date를 지정합니다. {ds}
+        reset_dag_run=True,
+        wait_for_completion=True,
+        poke_interval=60,
+    )
+    
 
-    crawler_name = 'de-1-1-dw-crawler'
+    
+    crawler_names = ['de1-1-wanted-json-crawler', 'de1-1-jumpit-json-crawler', 'de1-1-jobplanet-json-crawler', 'de1-1-rallit-json-crawler']
+    
+    last_tasks = []
+    for crawler_name in crawler_names:
+        last_task = start_crawler(crawler_name=crawler_name) >> check_crawler_status(crawler_name=crawler_name)
+        last_tasks.append(last_task)
 
-    start_crawler(crawler_name=crawler_name) >> check_crawler_status(crawler_name=crawler_name)
+    # 4. 마지막 PythonOperator 인스턴스를 DAG의 마지막 작업에 연결
+    final_task = log_final_message()
+    
+    last_tasks >> final_task >> trigger_etl_dag_task
