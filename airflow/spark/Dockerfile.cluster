@@ -2,4 +2,20 @@ FROM docker.io/bitnami/spark:3.3
 
 USER root
 
-RUN pip install --no-cache-dir pyspark==3.3.2 && py4j==0.10.9.5
+# 폴더 생성
+RUN mkdir -p /opt/bitnami/spark/work-dir
+
+# requirements.txt 파일을 Docker 이미지 내의 /opt/bitnami/spark/work-dir 폴더로 복사
+COPY ./requirements.txt /opt/bitnami/spark/work-dir/
+
+WORKDIR /opt/bitnami/spark/work-dir/
+
+RUN chmod -R 777 /opt/bitnami/spark/work-dir/
+
+# requirements.txt에 명시된 패키지들 설치
+RUN pip install --no-cache-dir -r requirements.txt
+
+# spark workers were executing under user ID 1001.
+USER 1001
+
+

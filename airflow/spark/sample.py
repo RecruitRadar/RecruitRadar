@@ -2,7 +2,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import Row
 
 # Spark 세션 초기화
-spark = SparkSession.builder.appName("DataFrameExample").getOrCreate()
+spark = SparkSession.builder.appName("DataFrameExample").master("spark://spark:7077").getOrCreate()
 
 # 예제 데이터 리스트 생성
 data = [
