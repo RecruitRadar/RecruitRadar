@@ -84,8 +84,6 @@ with DAG('glue_crawler_dag',
         poke_interval=60,
     )
     
-
-    
     crawler_names = ['de1-1-wanted-json-crawler', 'de1-1-jumpit-json-crawler', 'de1-1-jobplanet-json-crawler', 'de1-1-rallit-json-crawler']
     
     last_tasks = []
@@ -94,6 +92,8 @@ with DAG('glue_crawler_dag',
         last_tasks.append(last_task)
 
     # 4. 마지막 PythonOperator 인스턴스를 DAG의 마지막 작업에 연결
-    final_task = log_final_message()
+    first_crawler_end_task = log_final_message()
     
-    last_tasks >> final_task >> trigger_etl_dag_task
+    etl_crawler_name = "de1-1-1st-cleaned-data-crawler"
+    
+    last_tasks >> first_crawler_end_task >> trigger_etl_dag_task >> start_crawler(crawler_name=etl_crawler_name) >> check_crawler_status(crawler_name=etl_crawler_name)
