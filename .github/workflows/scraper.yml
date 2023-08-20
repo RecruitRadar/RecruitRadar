@@ -2,7 +2,7 @@ name: Continuous Integration and Deployment
 
 on:
   push:
-    branches: [ feat/add-hajun ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
