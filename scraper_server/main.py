@@ -136,7 +136,7 @@ async def jobplanet_scrape_jobs() -> Dict[str, str]:
         scraped_time = end_time - start_time
         print(f'took {scraped_time} seconds to scrape {len(data_list)} jobs and upload to S3')
 
-        return {"message": f"Scraped {len(data_list)} jobs and uploaded to S3 successfully!"}
+        return {"message": f"Scraped {len(result)} jobs and uploaded to S3 successfully!"}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
