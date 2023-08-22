@@ -100,7 +100,7 @@ def unnest_and_rename(df):
 
 
 def rearrange_dataframe_columns(df: DataFrame, columns: List[str]) -> DataFrame:
-        return df.select(*columns)
+    return df.select(*columns)
 
 
 def process_text_columns(df: DataFrame, columns: List[str]) -> DataFrame:
