@@ -30,7 +30,7 @@ with DAG(
     default_args=default_args,
     description='A async user jobplanet_job_scraper_api call dag',
     start_date=datetime(2023, 8, 1),
-    schedule_interval='@once',
+    schedule_interval='0 0 * * *',
 ) as dag:
     
     task_http_sensor_check = HttpSensor(
