@@ -36,7 +36,7 @@ class Scraper:
             ]
         self.headers = {'User-Agent': random.choice(self.user_agent_list),}
         self.jds = []
-        
+
 
     async def fetch_data_from_api(self, session: aiohttp.ClientSession, url: str) -> Dict[str, Any]:
         """
@@ -52,7 +52,7 @@ class Scraper:
         async with session.get(url) as response:
             if response.status != 200:
                 print(f"Error occurred: {response.status}")
-                await asyncio.sleep(3)
+                # await asyncio.sleep(0.5)
                 return {}
             data =  await response.json()
             return data
@@ -69,28 +69,30 @@ class Scraper:
             list: A list of job IDs.
         """
         print(f'>>> Started collecting job listings for the position of {self.category_name}.')
-        job_id_list = []
         url = f'{self.base_url}/api/v4/jobs?country=kr&tag_type_ids={self.category_id}&\
-            job_sort=company.response_rate_order&locations=all&years=-1'
-        
+            locations=all&years=-1&limit=100&offset=0&job_sort=company.response_rate_order'
+
         data = await self.fetch_data_from_api(session=session, url=url)
+
+        job_id_set = set()
         job_list = data.get('data', [])
         if job_list:
-            job_id_list.extend([ job['id'] for job in job_list])
+            job_id_set.update([ job['id'] for job in job_list])
         next_link = data.get('links', dict()).get('next', None)
 
         while next_link:
             url = f'{self.base_url}{next_link}'
-            
+            print(f'>>> Fetching job listings from {url}')
+
             data = await self.fetch_data_from_api(session=session, url=url)
-            jobs_list = data.get('data', [])
+            job_list = data.get('data', [])
             if job_list:
-                job_id_list.extend([ job['id'] for job in job_list])
+                job_id_set.update([ job['id'] for job in job_list])
             next_link = data.get('links', dict()).get('next', None)
-            await asyncio.sleep(1.5)
-        
+            # await asyncio.sleep(0.5)
+
         print(f">>> Completed collecting job listings for the position of a {self.category_name}.")
-        return job_id_list
+        return list(job_id_set)
 
 
     async def fetch_job_description(self, session: aiohttp.ClientSession, job_id: str) -> None:
@@ -138,9 +140,9 @@ class Scraper:
                 print(f'error occured - {e}')
         else:
             pass
-        await asyncio.sleep(2)
+        # await asyncio.sleep(2)
 
-        
+
     async def run(self) -> List[Dict]:
         """
         Run the scraping process.
@@ -148,10 +150,30 @@ class Scraper:
         Returns:
             list: A list of dictionaries containing job details.
         """
+        print(f">>> Collecting job descriptions for the position of a {self.category_name}.")
+
+        # async with aiohttp.ClientSession(headers=self.headers) as session:
+        #     job_id_list = await self.fetch_job_url_with_async(session=session)
+        #     tasks = [ self.fetch_job_description(session, str(job_id)) for job_id in job_id_list ]
+        #     await asyncio.gather(*tasks)
+
+        # print(f">>> Completed collecting job descriptions for the position of a {self.category_name}.")
+
+        # return self.jds
+
         async with aiohttp.ClientSession(headers=self.headers) as session:
             job_id_list = await self.fetch_job_url_with_async(session=session)
-            tasks = [ self.fetch_job_description(session, str(job_id)) for job_id in job_id_list ]
+
+            # tasks = [ self.fetch_job_description(session, str(job_id)) for job_id in job_id_list ]
+            tasks = []
+            for i, job_id in enumerate(job_id_list):
+                task = self.fetch_job_description(session, str(job_id))
+                tasks.append(task)
+                print(f">>> {i+1}/{len(job_id_list)} job descriptions collected.")
+
             await asyncio.gather(*tasks)
+
+        print(f">>> Completed collecting job descriptions for the position of a {self.category_name}.")
 
         return self.jds
 
@@ -169,7 +191,7 @@ class Scraper:
         """
         folder_name = 'data'
         if not os.path.exists(folder_name):
-            os.mkdir(folder_name) 
+            os.mkdir(folder_name)
         file_name = "wanted.json"
         json_data = {'result': jobs}
         file_path = os.path.join(folder_name, file_name)
@@ -199,11 +221,11 @@ class Scraper:
         month = str(today.month).zfill(2)
         day = str(today.day).zfill(2)
         FILE_NAME = f"wanted/year={year}/month={month}/day={day}/wanted.json"
-        
+
         s3 = boto3.client('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name=region_name)
-        
+
         s3.upload_file(file_path, bucket_name, FILE_NAME)
-        
+
         path_name = os.path.join(bucket_name, FILE_NAME)
         print(f"File uploaded successfully to s3://{path_name}")
 
@@ -256,7 +278,7 @@ def main() -> None:
     secret_key = os.environ.get('secret_key')
     region_name = "ap-northeast-2"
     base_url = 'https://www.wanted.co.kr'
-    
+
     jds_list = []
     for category_id, category_name in category.items():
         scraper = Scraper(base_url=base_url, category_id=category_id, category_name=category_name)
@@ -265,16 +287,15 @@ def main() -> None:
         jds_list += jds
 
     file_path = Scraper.save_json(jds_list)
-    Scraper.upload_to_s3(
-        file_path=file_path,
-        bucket_name=bucket_name,
-        access_key=access_key,
-        secret_key=secret_key,
-        region_name=region_name)
+    # Scraper.upload_to_s3(
+    #     file_path=file_path,
+    #     bucket_name=bucket_name,
+    #     access_key=access_key,
+    #     secret_key=secret_key,
+    #     region_name=region_name)
     end = time.time()
     print(f"total seconds : {end - start}")
 
 
 if __name__ == "__main__":
     main()
-
