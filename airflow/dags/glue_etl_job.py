@@ -61,19 +61,10 @@ with DAG('glue_etl_job_dag',
         
         return f"ETL Job finished with status with {job_run_state}!"
 
-    trigger_glue_nlp_crawler_dag_task = TriggerDagRunOperator(
-        task_id='trigger_glue_nlp_crawler_dag',
-        trigger_dag_id="glue_nlp_crawler_dag",  # 여기에 트리거링하려는 DAG의 ID를 지정합니다.
-        conf={"message": "Triggered from glue_etl_job_dag"},
-        execution_date="{{ ds }}", # 여기에 트리거링하려는 DAG의 execution_date를 지정합니다. {ds}
-        reset_dag_run=True,
-        wait_for_completion=True,
-        poke_interval=60,
-    )
         
     etl_job_name = 'de1_1_1st_preprocessing_script'
     job_run_id_extract = start_etl_job(job_name=etl_job_name)
     monitor_task = monitor_etl_job(job_name=etl_job_name, job_run_id=job_run_id_extract)
     log_final_message_task = log_final_message(monitor_task)
 
-    job_run_id_extract >> monitor_task >> log_final_message_task >> trigger_glue_nlp_crawler_dag_task
+    job_run_id_extract >> monitor_task >> log_final_message_task

@@ -1,4 +1,3 @@
-# library for setting glue studio notebook
 import sys
 from awsglue.transforms import *
 from awsglue.utils import getResolvedOptions
@@ -6,8 +5,9 @@ from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
 
-# library for conducting 2nd preprocessing
+
 from pyspark.sql.functions import udf
+from pyspark.sql.functions import col
 from pyspark.sql.types import ArrayType, StringType
 from botocore.exceptions import NoCredentialsError
 from botocore.exceptions import ClientError
@@ -15,6 +15,7 @@ from datetime import date
 from kiwipiepy import Kiwi
 import boto3
 import json
+import pandas as pd
 
 
 class S3Uploader:
@@ -39,6 +40,7 @@ class S3Uploader:
         day = str(today.day).zfill(2)
 
         return f's3://{self.bucket_name}/2nd_processed_data/year={year}/month={month}/day={day}'
+        
         
 def get_secret():
     """
@@ -70,21 +72,27 @@ def get_secret():
 
     return BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME, KAKAO_API_TOKEN
 
+def create_dyf_from_catalog(database_name, table_name):
+    today = date.today()
+    year = str(today.year)
+    month = str(today.month).zfill(2)
+    day = str(today.day).zfill(2)
+    return glueContext.create_dynamic_frame.from_catalog(
+        database=database_name,
+        table_name=table_name,
+        push_down_predicate=f'(year=="{year}" and month=="{month}" and day=="{day}")'
+    )
 
-@udf(returnType=ArrayType(StringType()))
-def extract_korean_noun(text):
+def extract_korean_noun(kiwi, text):
     if text is None or text.strip() == "":
         return []
-    kiwi = Kiwi()
     result = kiwi.tokenize(text)
     return [token.form for token in result if token.tag in {'NNG', 'NNP'}]
 
 
-@udf(returnType=ArrayType(StringType()))
-def extract_english_noun(text):
+def extract_english_noun(kiwi, text):
     if text is None or text.strip() == "":
         return []
-    kiwi = Kiwi()
     result = kiwi.tokenize(text)
     return [token.form for token in result if token.tag == 'SL']
 
@@ -93,37 +101,47 @@ sc = SparkContext.getOrCreate()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
 job = Job(glueContext)
-    
-dyf = glueContext.create_dynamic_frame.from_catalog(database='de1_1_database', table_name='1st_cleaned_data')
+
+
+dyf = create_dyf_from_catalog('de1_1_database', '1st_cleaned_data')
 dyf.printSchema()
 
 df = dyf.toDF()
 df.show()
 
 drop_cols = ("year", "month", "day")
-df = df.drop(*drop_cols)
-df.printSchema()
-df.show()
+result_df = df.drop(*drop_cols)
+result_df.printSchema()
+result_df.show()
+
+result_df = result_df.toPandas()
 
 
-df = df.withColumn("preferred_korean_nouns", extract_korean_noun(df["preferred"]))
-df = df.withColumn("required_korean_nouns", extract_korean_noun(df["required"]))
-df = df.withColumn("primary_responsibility_korean_nouns", extract_korean_noun(df["primary_responsibility"]))
-df = df.withColumn("welfare_korean_nouns", extract_korean_noun(df["welfare"]))
-df = df.withColumn("preferred_english_nouns", extract_english_noun(df["preferred"]))
-df = df.withColumn("required_english_nouns", extract_english_noun(df["required"]))
-df = df.withColumn("primary_responsibility_english_nouns", extract_english_noun(df["primary_responsibility"]))
-df = df.withColumn("welfare_english_nouns", extract_english_noun(df["welfare"]))
-df.show()
+kiwi = Kiwi()
 
-repartitioned_df = df.repartition(1)
+result_df['preferred_korean_nouns'] = result_df.apply(lambda x: extract_korean_noun(kiwi, x['preferred']), axis=1)
+result_df['required_korean_nouns'] = result_df.apply(lambda x: extract_korean_noun(kiwi, x['required']), axis=1)
+result_df['primary_responsibility_korean_nouns'] = result_df.apply(lambda x: extract_korean_noun(kiwi, x['primary_responsibility']), axis=1)
+result_df['welfare_korean_nouns'] = result_df.apply(lambda x: extract_korean_noun(kiwi, x['welfare']), axis=1)
+
+
+result_df['preferred_english_nouns'] = result_df.apply(lambda x: extract_english_noun(kiwi, x['preferred']), axis=1)
+result_df['required_english_nouns'] = result_df.apply(lambda x: extract_english_noun(kiwi, x['required']), axis=1)
+result_df['primary_responsibility_english_nouns'] = result_df.apply(lambda x: extract_english_noun(kiwi, x['primary_responsibility']), axis=1)
+result_df['welfare_english_nouns'] = result_df.apply(lambda x: extract_english_noun(kiwi, x['welfare']), axis=1)
+
 
 BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME, _ = get_secret()
 uploader = S3Uploader(BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME)
 upload_file_path = uploader.get_upload_file_path()
 
-repartitioned_df.write.parquet(upload_file_path, mode="overwrite")
+spark_df = spark.createDataFrame(result_df) 
+spark_df.printSchema()
+spark_df.show()
+
+spark_df.repartition(1).write.parquet(upload_file_path, mode="overwrite")
 
 job.commit()
 sc.stop()
+
 job.commit()

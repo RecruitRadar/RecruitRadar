@@ -84,6 +84,16 @@ with DAG('glue_crawler_dag',
         poke_interval=60,
     )
     
+    trigger_glue_nlp_dag_task = TriggerDagRunOperator(
+        task_id='trigger_glue_nlp_dag',
+        trigger_dag_id="glue_nlp_job_dag",  # 여기에 트리거링하려는 DAG의 ID를 지정합니다.
+        conf={"message": "Triggered from glue_nlp_crawler_dag"},
+        execution_date="{{ ds }}", # 여기에 트리거링하려는 DAG의 execution_date를 지정합니다. {ds}
+        reset_dag_run=True,
+        wait_for_completion=True,
+        poke_interval=60,
+    )
+
     crawler_names = ['de1-1-wanted-json-crawler', 'de1-1-jumpit-json-crawler', 'de1-1-jobplanet-json-crawler', 'de1-1-rallit-json-crawler']
     
     last_tasks = []
@@ -95,5 +105,6 @@ with DAG('glue_crawler_dag',
     first_crawler_end_task = log_final_message()
     
     etl_crawler_name = "de1-1-1st-cleaned-data-crawler"
+    nlp_crawler_name = 'de1-1-2nd-processed-data-crawler'
     
-    last_tasks >> first_crawler_end_task >> trigger_etl_dag_task >> start_crawler(crawler_name=etl_crawler_name) >> check_crawler_status(crawler_name=etl_crawler_name)
+    last_tasks >> first_crawler_end_task >> trigger_etl_dag_task >> start_crawler(crawler_name=etl_crawler_name) >> check_crawler_status(crawler_name=etl_crawler_name) >> trigger_glue_nlp_dag_task >> start_crawler(crawler_name=nlp_crawler_name) >> check_crawler_status(crawler_name=nlp_crawler_name)
