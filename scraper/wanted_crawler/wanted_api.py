@@ -287,12 +287,12 @@ def main() -> None:
         jds_list += jds
 
     file_path = Scraper.save_json(jds_list)
-    # Scraper.upload_to_s3(
-    #     file_path=file_path,
-    #     bucket_name=bucket_name,
-    #     access_key=access_key,
-    #     secret_key=secret_key,
-    #     region_name=region_name)
+    Scraper.upload_to_s3(
+        file_path=file_path,
+        bucket_name=bucket_name,
+        access_key=access_key,
+        secret_key=secret_key,
+        region_name=region_name)
     end = time.time()
     print(f"total seconds : {end - start}")
 
