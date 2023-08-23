@@ -105,5 +105,6 @@ with DAG('glue_crawler_dag',
     first_crawler_end_task = log_final_message()
     
     etl_crawler_name = "de1-1-1st-cleaned-data-crawler"
+    nlp_crawler_name = 'de1-1-2nd-processed-data-crawler'
     
-    last_tasks >> first_crawler_end_task >> trigger_etl_dag_task >> start_crawler(crawler_name=etl_crawler_name) >> check_crawler_status(crawler_name=etl_crawler_name) >> trigger_glue_nlp_dag_task
+    last_tasks >> first_crawler_end_task >> trigger_etl_dag_task >> start_crawler(crawler_name=etl_crawler_name) >> check_crawler_status(crawler_name=etl_crawler_name) >> trigger_glue_nlp_dag_task >> start_crawler(crawler_name=nlp_crawler_name) >> check_crawler_status(crawler_name=nlp_crawler_name)
