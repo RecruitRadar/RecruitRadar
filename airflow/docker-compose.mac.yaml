@@ -47,7 +47,7 @@ x-airflow-common:
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
   image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.5.1}
-  build: 
+  build:
     context: .
     dockerfile: Dockerfile.mac
   environment:
@@ -59,7 +59,7 @@ x-airflow-common:
     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
-    
+
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
@@ -86,7 +86,7 @@ x-airflow-common:
 services:
 
   spark:
-    build: 
+    build:
       context: ./spark
       dockerfile: Dockerfile.cluster
     environment:
@@ -106,7 +106,7 @@ services:
     - app-tier
 
   spark-worker-1:
-    build: 
+    build:
       context: ./spark
       dockerfile: Dockerfile.cluster
     environment:
@@ -129,7 +129,7 @@ services:
       - spark
 
   spark-worker-2:
-    build: 
+    build:
       context: ./spark
       dockerfile: Dockerfile.cluster
     environment:
@@ -152,7 +152,7 @@ services:
       - spark
 
   spark-jupyter:
-    build: 
+    build:
       context: ./spark
       dockerfile: Dockerfile.jupyter
     ports:
@@ -174,23 +174,23 @@ services:
     depends_on:
       - spark
 
-  # zeppelin:
-  #   image: apache/zeppelin:0.10.1
-  #   environment:
-  #     - ZEPPELIN_NOTEBOOK_DIR=/notebook
-  #     - ZEPPELIN_INTERPRETER_DEP_MVNREPO=https://repo1.maven.org/maven2/
-  #     - MASTER=spark://spark:7077
-  #     - ZEPPELIN_WEBSOCKET_MAX_TEXT_MESSAGE_SIZE=1048576
-  #     - SPARK_HOME=/spark
-  #     - SPARK_SUBMIT_OPTIONS="--packages org.apache.spark:spark-streaming-kafka-0-10_2.11:2.4.0,org.apache.kafka:kafka-clients:2.0.0"
-  #   ports:
-  #     - '8999:8080'
-  #   volumes:
-  #     - ${AIRFLOW_PROJ_DIR:-.}/spark:/notebook
-  #   networks:
-  #     - app-tier
-  #   depends_on:
-  #     - spark
+  zeppelin:
+    image: apache/zeppelin:0.10.1
+    environment:
+      - ZEPPELIN_NOTEBOOK_DIR=/notebook
+      - ZEPPELIN_INTERPRETER_DEP_MVNREPO=https://repo1.maven.org/maven2/
+      - MASTER=spark://spark:7077
+      - ZEPPELIN_WEBSOCKET_MAX_TEXT_MESSAGE_SIZE=1048576
+      - SPARK_HOME=/spark
+      - SPARK_SUBMIT_OPTIONS="--packages org.apache.spark:spark-streaming-kafka-0-10_2.11:2.4.0,org.apache.kafka:kafka-clients:2.0.0"
+    ports:
+      - '8999:8080'
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}/spark:/notebook
+    networks:
+      - app-tier
+    depends_on:
+      - spark
 
 
   postgres:
@@ -239,7 +239,7 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-      
+
 
   airflow-scheduler:
     <<: *airflow-common
