@@ -66,7 +66,15 @@ class S3Uploader:
 
 # Function to create DynamicFrame from the catalog
 def create_dyf_from_catalog(database_name, table_name):
-    return glueContext.create_dynamic_frame.from_catalog(database=database_name, table_name=table_name)
+    today = date.today()
+    year = str(today.year)
+    month = str(today.month).zfill(2)
+    day = str(today.day).zfill(2)
+    return glueContext.create_dynamic_frame.from_catalog(
+        database=database_name,
+        table_name=table_name,
+        push_down_predicate=f'(year=="{year}" and month=="{month}" and day=="{day}")'
+    )
 
 
 def unnest_and_rename(df):
@@ -200,7 +208,7 @@ jumpit_df = jumpit_dyf.toDF()
 wanted_df = wanted_dyf.toDF()
 
 # Apply the refactored function
-jobplanet_df = unnest_and_rename(jobplanet_df)
+# jobplanet_df = unnest_and_rename(jobplanet_df)
 
 # # 여기서 플랫폼별 중복제거
 # # year, month, day 기준으로 정렬 -> 'job_id' + 'category' 기준으로 date가 최신꺼만 남기고 다 삭제
