@@ -167,6 +167,27 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
+  airflow-worker-2:
+    <<: *airflow-common
+    command: celery worker
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - 'celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    environment:
+      <<: *airflow-common-env
+      # Required to handle warm shutdown of the celery workers properly
+      # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
+      DUMB_INIT_SETSID: "0"
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
   airflow-triggerer:
     <<: *airflow-common
     command: triggerer
@@ -279,8 +300,8 @@ services:
   flower:
     <<: *airflow-common
     command: celery flower
-    profiles:
-      - flower
+    # profiles:
+    #   - flower
     ports:
       - 5555:5555
     healthcheck:
@@ -293,6 +314,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - app-tier
 
 volumes:
   postgres-db-volume:
