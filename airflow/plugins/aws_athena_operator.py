@@ -35,6 +35,7 @@ class AthenaOperator(BaseOperator):
         self.region_name = region_name
         self.query_execution_id = None  # initialize with None
 
+
     def execute(self, context) -> Optional[str]:
         # Fetch the AWS credentials from the connection set in Airflow UI
         aws_hook = AwsHook(self.aws_conn_id)

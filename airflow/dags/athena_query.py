@@ -138,6 +138,34 @@ new_tables_queries = {
         CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_welfare_korean_nouns" AS
         SELECT DISTINCT job_id, platform, unnested_welfare_korean_nouns
         FROM "de1_1_database"."2nd_processed_data", UNNEST(welfare_korean_nouns) AS t(unnested_welfare_korean_nouns);
+    """,
+    
+    "jd_primary_responsibility_english_nouns": """
+        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_primary_responsibility_english_nouns" AS
+        SELECT DISTINCT job_id, platform, unnested_primary_responsibility_english_nouns
+        FROM "de1_1_database"."2nd_processed_data",
+        UNNEST(primary_responsibility_english_nouns) AS t(unnested_primary_responsibility_english_nouns);
+    """,
+    
+    "jd_welfare_english_nouns":"""
+        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_welfare_english_nouns" AS
+        SELECT DISTINCT job_id, platform, unnested_welfare_english_nouns
+        FROM "de1_1_database"."2nd_processed_data", 
+        UNNEST(welfare_english_nouns) AS t(unnested_welfare_english_nouns);
+    """,
+    
+    "jd_required_english_nouns":"""
+        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_required_english_nouns" AS
+        SELECT DISTINCT job_id, platform, unnested_required_english_nouns
+        FROM "de1_1_database"."2nd_processed_data", 
+        UNNEST(required_english_nouns) AS t(unnested_required_english_nouns);
+    """,
+    
+    "jd_preferred_english_nouns":"""
+        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_preferred_english_nouns" AS
+        SELECT DISTINCT job_id, platform, unnested_preferred_english_nouns
+        FROM "de1_1_database"."2nd_processed_data",
+        UNNEST(preferred_english_nouns) AS t(unnested_preferred_english_nouns);
     """
 }
 
