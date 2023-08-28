@@ -84,96 +84,6 @@ x-airflow-common:
 
 services:
 
-  spark:
-    build: 
-      context: ./spark
-      dockerfile: Dockerfile.cluster
-    environment:
-      - SPARK_MODE=master
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
-    ports:
-      - '8181:8080'
-      - '7077:7077'
-      - "4040-4045:4040-4045"
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/spark:/opt/bitnami/spark/work-dir
-    networks:
-    - app-tier
-
-  spark-worker-1:
-    build: 
-      context: ./spark
-      dockerfile: Dockerfile.cluster
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=1G
-      - SPARK_WORKER_CORES=1
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
-    # ports:
-    #   - '8082:8081'
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/spark:/opt/bitnami/spark/work-dir
-    networks:
-    - app-tier
-    depends_on:
-      - spark
-
-  spark-worker-2:
-    build: 
-      context: ./spark
-      dockerfile: Dockerfile.cluster
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=1G
-      - SPARK_WORKER_CORES=1
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
-    # ports:
-    #   - '8083:8081'
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/spark:/opt/bitnami/spark/work-dir
-    networks:
-    - app-tier
-    depends_on:
-      - spark
-
-  spark-jupyter:
-    build: 
-      context: ./spark
-      dockerfile: Dockerfile.jupyter
-    ports:
-      - "8888:8888"
-      # - "4041:4041"
-      # - "4040-4080:4040-4080"
-      # - "9999:9999"
-    environment:
-      - PYSPARK_PYTHON=/usr/bin/python3
-      - PYSPARK_DRIVER_PYTHON=ipython
-      - PYSPARK_DRIVER_PYTHON_OPTS=notebook
-      - MASTER=spark://spark:7077
-      - PYSPARK_SUBMIT_ARGS="--master spark://spark:7077 pyspark-shell"
-    restart: always
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/spark:/home/jovyan
-    networks:
-    - app-tier
-    depends_on:
-      - spark
-
-
   postgres:
     image: postgres:13
     environment:
@@ -237,6 +147,27 @@ services:
         condition: service_completed_successfully
 
   airflow-worker:
+    <<: *airflow-common
+    command: celery worker
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - 'celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    environment:
+      <<: *airflow-common-env
+      # Required to handle warm shutdown of the celery workers properly
+      # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
+      DUMB_INIT_SETSID: "0"
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-worker-2:
     <<: *airflow-common
     command: celery worker
     healthcheck:
@@ -369,8 +300,8 @@ services:
   flower:
     <<: *airflow-common
     command: celery flower
-    profiles:
-      - flower
+    # profiles:
+    #   - flower
     ports:
       - 5555:5555
     healthcheck:
@@ -383,6 +314,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - app-tier
 
 volumes:
   postgres-db-volume:

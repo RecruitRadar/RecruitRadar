@@ -161,7 +161,8 @@ async def wanted_scrape_jobs() -> Dict[str, str]:
             bucket_name=BUCKET_NAME,
             access_key=ACCESS_KEY,
             secret_key=SECRET_KEY,
-            region_name=REGION_NAME)
+            region_name=REGION_NAME
+            )
 
         end_time = time.time()
         scraped_time = end_time - start_time

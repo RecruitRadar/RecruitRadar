@@ -65,17 +65,20 @@ class AthenaOperator(BaseOperator):
         while True:
             response = client.get_query_execution(QueryExecutionId=self.query_execution_id)
             state = response['QueryExecution']['Status']['State']
+
             self.current_time = time.time()
 
             if int(self.current_time - self.start_time) > self.max_time: # If the query execution time exceeds max time
                 self.time_out = True
                 break
 
+
             if state in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
                 break
             else:
                 self.log.info("Query is still running. Sleep for %s seconds", self.sleep_time)
                 time.sleep(self.sleep_time)
+
 
         if self.time_out:
             self.log.error("Query execution exceeds: %d seconds", self.max_time)
