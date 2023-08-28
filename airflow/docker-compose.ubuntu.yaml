@@ -64,6 +64,8 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
 
+    AIRFLOW__WEBSERVER__SECRET_KEY: b'u\x94\xc4|,)\x91\xa9\xc1\xfd"q\x15\xdd\x8c^'
+
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- pandas numpy psycopg2-binary}
 
