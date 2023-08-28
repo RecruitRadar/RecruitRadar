@@ -35,7 +35,7 @@ jobs:
           TESTING: true
         run: |
           pytest
-          zip -r9 report.zip htmlcov/
+          zip -r9 report.zip /
 
       # Upload Test Results
       - name: Upload Artifact
