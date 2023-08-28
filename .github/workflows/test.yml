@@ -3,7 +3,7 @@ name: TEST
 on:
   workflow_dispatch:
   push:
-    branches: [ feat/add-hajun2 ]
+    branches: [ main ]
 
 env:
   APP_ENV: test
