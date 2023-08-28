@@ -119,6 +119,7 @@ def process_elt_table_queries(table_list):
         dimension_drop_tasks.append(drop_task)
         dimension_create_tasks.append(create_task)
 
+
 process_elt_table_queries(etl_table_list)
 
 # Setting up the dependencies for start and end tasks
