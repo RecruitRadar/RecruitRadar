@@ -4,7 +4,13 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
-
+    
+# on:
+#   workflow_run:
+#     workflows: ["TEST"]
+#     types:
+#       - completed
+ 
 jobs:
   
   build_and_upload:
@@ -37,6 +43,7 @@ jobs:
           --deployment-group-name aws-fastapi-group \
           --s3-location bucket=de1-1-backend,bundleType=tgz,key=backend_folder/RecruitRadar.tar.gz
   
+
   deploy_to_ec2:
     name: Deploy to EC2
     needs: build_and_upload

@@ -1,7 +1,7 @@
 version: '3.1'
 
 services:
-  aws-ecs-fastapi:
+  aws-fastapi:
     build:
       context: ./
       dockerfile: ./Dockerfile

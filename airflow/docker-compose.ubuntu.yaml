@@ -53,6 +53,11 @@ x-airflow-common:
   environment:
     &airflow-common-env
     AIRFLOW_VAR_DATA_DIR: /opt/airflow/data
+    AIRFLOW_VAR_LOG_DIR: /opt/airflow/logs
+    AIRFLOW_VAR_PLUGINS_DIR: /opt/airflow/plugins
+    AIRFLOW_VAR_DAGS_DIR: /opt/airflow/dags
+    AIRFLOW_VAR_DAGS_SQL_DIR: /opt/airflow/dags/sqls
+
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     # For backward compatibility, with Airflow <2.3
@@ -63,6 +68,8 @@ x-airflow-common:
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+
+    AIRFLOW__WEBSERVER__SECRET_KEY: b'u\x94\xc4|,)\x91\xa9\xc1\xfd"q\x15\xdd\x8c^'
 
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- pandas numpy psycopg2-binary}

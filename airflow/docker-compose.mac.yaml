@@ -53,6 +53,11 @@ x-airflow-common:
   environment:
     &airflow-common-env
     AIRFLOW_VAR_DATA_DIR: /opt/airflow/data
+    AIRFLOW_VAR_LOG_DIR: /opt/airflow/logs
+    AIRFLOW_VAR_PLUGINS_DIR: /opt/airflow/plugins
+    AIRFLOW_VAR_DAGS_DIR: /opt/airflow/dags
+    AIRFLOW_VAR_DAGS_SQL_DIR: /opt/airflow/dags/sqls
+    
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     # For backward compatibility, with Airflow <2.3
@@ -85,112 +90,112 @@ x-airflow-common:
 
 services:
 
-  spark:
-    build:
-      context: ./spark
-      dockerfile: Dockerfile.cluster
-    environment:
-      - SPARK_MODE=master
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
-    ports:
-      - '8181:8080'
-      - '7077:7077'
-      - "4040-4045:4040-4045"
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/spark:/opt/bitnami/spark/work-dir
-    networks:
-    - app-tier
+  # spark:
+  #   build:
+  #     context: ./spark
+  #     dockerfile: Dockerfile.cluster
+  #   environment:
+  #     - SPARK_MODE=master
+  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
+  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
+  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+  #     - SPARK_SSL_ENABLED=no
+  #     - SPARK_USER=spark
+  #   ports:
+  #     - '8181:8080'
+  #     - '7077:7077'
+  #     - "4040-4045:4040-4045"
+  #   volumes:
+  #     - ${AIRFLOW_PROJ_DIR:-.}/spark:/opt/bitnami/spark/work-dir
+  #   networks:
+  #   - app-tier
 
-  spark-worker-1:
-    build:
-      context: ./spark
-      dockerfile: Dockerfile.cluster
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=1G
-      - SPARK_WORKER_CORES=1
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
-    # ports:
-    #   - '8082:8081'
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/spark:/opt/bitnami/spark/work-dir
-    networks:
-    - app-tier
-    depends_on:
-      - spark
+  # spark-worker-1:
+  #   build:
+  #     context: ./spark
+  #     dockerfile: Dockerfile.cluster
+  #   environment:
+  #     - SPARK_MODE=worker
+  #     - SPARK_MASTER_URL=spark://spark:7077
+  #     - SPARK_WORKER_MEMORY=1G
+  #     - SPARK_WORKER_CORES=1
+  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
+  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
+  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+  #     - SPARK_SSL_ENABLED=no
+  #     - SPARK_USER=spark
+  #   # ports:
+  #   #   - '8082:8081'
+  #   volumes:
+  #     - ${AIRFLOW_PROJ_DIR:-.}/spark:/opt/bitnami/spark/work-dir
+  #   networks:
+  #   - app-tier
+  #   depends_on:
+  #     - spark
 
-  spark-worker-2:
-    build:
-      context: ./spark
-      dockerfile: Dockerfile.cluster
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=1G
-      - SPARK_WORKER_CORES=1
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
-    # ports:
-    #   - '8083:8081'
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/spark:/opt/bitnami/spark/work-dir
-    networks:
-    - app-tier
-    depends_on:
-      - spark
+  # spark-worker-2:
+  #   build:
+  #     context: ./spark
+  #     dockerfile: Dockerfile.cluster
+  #   environment:
+  #     - SPARK_MODE=worker
+  #     - SPARK_MASTER_URL=spark://spark:7077
+  #     - SPARK_WORKER_MEMORY=1G
+  #     - SPARK_WORKER_CORES=1
+  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
+  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
+  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+  #     - SPARK_SSL_ENABLED=no
+  #     - SPARK_USER=spark
+  #   # ports:
+  #   #   - '8083:8081'
+  #   volumes:
+  #     - ${AIRFLOW_PROJ_DIR:-.}/spark:/opt/bitnami/spark/work-dir
+  #   networks:
+  #   - app-tier
+  #   depends_on:
+  #     - spark
 
-  spark-jupyter:
-    build:
-      context: ./spark
-      dockerfile: Dockerfile.jupyter
-    ports:
-      - "8888:8888"
-      # - "4041:4041"
-      # - "4040-4080:4040-4080"
-      # - "9999:9999"
-    environment:
-      - PYSPARK_PYTHON=/usr/bin/python3
-      - PYSPARK_DRIVER_PYTHON=ipython
-      - PYSPARK_DRIVER_PYTHON_OPTS=notebook
-      - MASTER=spark://spark:7077
-      - PYSPARK_SUBMIT_ARGS="--master spark://spark:7077 pyspark-shell"
-    restart: always
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/spark:/home/jovyan
-    networks:
-    - app-tier
-    depends_on:
-      - spark
+  # spark-jupyter:
+  #   build:
+  #     context: ./spark
+  #     dockerfile: Dockerfile.jupyter
+  #   ports:
+  #     - "8888:8888"
+  #     # - "4041:4041"
+  #     # - "4040-4080:4040-4080"
+  #     # - "9999:9999"
+  #   environment:
+  #     - PYSPARK_PYTHON=/usr/bin/python3
+  #     - PYSPARK_DRIVER_PYTHON=ipython
+  #     - PYSPARK_DRIVER_PYTHON_OPTS=notebook
+  #     - MASTER=spark://spark:7077
+  #     - PYSPARK_SUBMIT_ARGS="--master spark://spark:7077 pyspark-shell"
+  #   restart: always
+  #   volumes:
+  #     - ${AIRFLOW_PROJ_DIR:-.}/spark:/home/jovyan
+  #   networks:
+  #   - app-tier
+  #   depends_on:
+  #     - spark
 
-  zeppelin:
-    image: apache/zeppelin:0.10.1
-    environment:
-      - ZEPPELIN_NOTEBOOK_DIR=/notebook
-      - ZEPPELIN_INTERPRETER_DEP_MVNREPO=https://repo1.maven.org/maven2/
-      - MASTER=spark://spark:7077
-      - ZEPPELIN_WEBSOCKET_MAX_TEXT_MESSAGE_SIZE=1048576
-      - SPARK_HOME=/spark
-      - SPARK_SUBMIT_OPTIONS="--packages org.apache.spark:spark-streaming-kafka-0-10_2.11:2.4.0,org.apache.kafka:kafka-clients:2.0.0"
-    ports:
-      - '8999:8080'
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/spark:/notebook
-    networks:
-      - app-tier
-    depends_on:
-      - spark
+  # zeppelin:
+  #   image: apache/zeppelin:0.10.1
+  #   environment:
+  #     - ZEPPELIN_NOTEBOOK_DIR=/notebook
+  #     - ZEPPELIN_INTERPRETER_DEP_MVNREPO=https://repo1.maven.org/maven2/
+  #     - MASTER=spark://spark:7077
+  #     - ZEPPELIN_WEBSOCKET_MAX_TEXT_MESSAGE_SIZE=1048576
+  #     - SPARK_HOME=/spark
+  #     - SPARK_SUBMIT_OPTIONS="--packages org.apache.spark:spark-streaming-kafka-0-10_2.11:2.4.0,org.apache.kafka:kafka-clients:2.0.0"
+  #   ports:
+  #     - '8999:8080'
+  #   volumes:
+  #     - ${AIRFLOW_PROJ_DIR:-.}/spark:/notebook
+  #   networks:
+  #     - app-tier
+  #   depends_on:
+  #     - spark
 
 
   postgres:

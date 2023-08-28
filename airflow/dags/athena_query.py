@@ -7,6 +7,15 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.utils.helpers import chain
 
 import time
+import os
+
+# Constants
+DATABASE = 'de1_1_database'
+OUTPUT_LOCATION = 's3://de-1-1/athena/'
+AWS_CONN_ID = 'aws_default'
+
+BASE_SQL_DIR = os.environ.get('AIRFLOW_VAR_DAGS_SQL_DIR', '/opt/airflow/dags/sqls')
+AIRFLOW_SQL_DIR = f'{BASE_SQL_DIR}/athena'
 
 
 default_args = {
@@ -18,33 +27,36 @@ default_args = {
     'retry_delay': timedelta(minutes=5)
 }
 
+# template search path 
 dag = DAG(
     'athena_query_dag',
     default_args=default_args,
     description='A simple DAG to run Athena queries',
-    schedule_interval=timedelta(days=1),
-    start_date=datetime(2023, 1, 1),
+    schedule_interval='@once',
+    start_date=datetime(2023, 8, 1),
+    # template_searchpath=AIRFLOW_SQL_DIR,
     catchup=False
 )
-
-# Constants
-DATABASE = 'de1_1_database'
-OUTPUT_LOCATION = 's3://de-1-1/athena/'
-AWS_CONN_ID = 'aws_default'
-
 
 # Start and end tasks for better visualization
 start_task = DummyOperator(task_id="start", dag=dag)
 end_task = DummyOperator(task_id="end", dag=dag)
 
-def short_delay():
+def short_delay() -> None:
     time.sleep(10)
+
+
+def read_sql_file(file_path:str) -> str:
+    with open(file_path, 'r') as f:
+        return f.read()
 
 dimension_drop_tasks = []
 dimension_create_tasks = []
 
-def process_table_queries(table_queries):
-    for table_name, query_data in table_queries.items():
+
+def process_table_queries(create_table_list:list) -> None:
+    
+    for table_name in create_table_list:
         drop_query = f'DROP TABLE IF EXISTS {DATABASE}.{table_name};'
 
         drop_task = AthenaOperator(
@@ -61,9 +73,9 @@ def process_table_queries(table_queries):
             python_callable=short_delay,
             dag=dag
         )
-
-        create_query = query_data
-            
+        
+        create_query = read_sql_file(f'{AIRFLOW_SQL_DIR}/create_{table_name}.sql')
+        
         create_task = AthenaOperator(
             task_id=f'run_athena_create_{table_name}',
             query=create_query,
@@ -79,98 +91,19 @@ def process_table_queries(table_queries):
         dimension_create_tasks.append(create_task)
 
 
+create_table_list = [
+    "daily_jd_table", 
+    "company_detail", 
+    "jd_skills", 
+    "jd_preferred_korean_nouns", 
+    "jd_required_korean_nouns",
+    "jd_primary_responsibility_korean_nouns", 
+    "jd_welfare_korean_nouns", "jd_primary_responsibility_english_nouns", "jd_welfare_english_nouns",
+    "jd_required_english_nouns", 
+    "jd_preferred_english_nouns"
+]
 
-# New tables to be processed
-new_tables_queries = {
-    "daily_jd_table": """
-        CREATE TABLE IF NOT EXISTS "de1_1_database"."daily_jd_table" AS
-        SELECT DISTINCT
-            year,
-            month,
-            day,
-            CONCAT(year, '-', LPAD(month, 2, '0'), '-', LPAD(day, 2, '0')) AS date_str,
-            platform,
-            job_id,
-            company,
-            title,
-            major_category,
-            middle_category,
-            sub_category
-        FROM
-            "de1_1_database"."2nd_processed_data";
-    """,
-    "company_detail": """
-        CREATE TABLE IF NOT EXISTS "de1_1_database"."company_detail" AS
-        SELECT DISTINCT
-            company,
-            CASE WHEN coordinate IS NOT NULL THEN CAST(coordinate[1] AS DOUBLE) ELSE NULL END AS lat,
-            CASE WHEN coordinate IS NOT NULL THEN CAST(coordinate[2] AS DOUBLE) ELSE NULL END AS lon,
-            company_description
-        FROM
-            "de1_1_database"."2nd_processed_data";
-    """,
-    "jd_skills": """
-        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_skills" AS
-        SELECT DISTINCT job_id, platform, unnested_skill
-        FROM "de1_1_database"."2nd_processed_data", UNNEST(skills) AS t(unnested_skill);
-    """,
-    
-    "jd_preferred_korean_nouns": """
-        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_preferred_korean_nouns" AS
-        SELECT DISTINCT job_id, platform, unnested_preferred_korean_nouns
-        FROM "de1_1_database"."2nd_processed_data", UNNEST(preferred_korean_nouns) AS t(unnested_preferred_korean_nouns);
-    """,
-    
-    "jd_required_korean_nouns": """
-        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_required_korean_nouns" AS
-        SELECT DISTINCT job_id, platform, unnested_required_korean_nouns
-        FROM "de1_1_database"."2nd_processed_data", UNNEST(required_korean_nouns) AS t(unnested_required_korean_nouns);
-    """,
-    
-    "jd_primary_responsibility_korean_nouns": """
-        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_primary_responsibility_korean_nouns" AS
-        SELECT DISTINCT job_id, platform, unnested_primary_responsibility_korean_nouns
-        FROM "de1_1_database"."2nd_processed_data",
-        UNNEST(primary_responsibility_korean_nouns) AS t(unnested_primary_responsibility_korean_nouns);
-    """,
-    
-    "jd_welfare_korean_nouns": """
-        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_welfare_korean_nouns" AS
-        SELECT DISTINCT job_id, platform, unnested_welfare_korean_nouns
-        FROM "de1_1_database"."2nd_processed_data", UNNEST(welfare_korean_nouns) AS t(unnested_welfare_korean_nouns);
-    """,
-    
-    "jd_primary_responsibility_english_nouns": """
-        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_primary_responsibility_english_nouns" AS
-        SELECT DISTINCT job_id, platform, unnested_primary_responsibility_english_nouns
-        FROM "de1_1_database"."2nd_processed_data",
-        UNNEST(primary_responsibility_english_nouns) AS t(unnested_primary_responsibility_english_nouns);
-    """,
-    
-    "jd_welfare_english_nouns":"""
-        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_welfare_english_nouns" AS
-        SELECT DISTINCT job_id, platform, unnested_welfare_english_nouns
-        FROM "de1_1_database"."2nd_processed_data", 
-        UNNEST(welfare_english_nouns) AS t(unnested_welfare_english_nouns);
-    """,
-    
-    "jd_required_english_nouns":"""
-        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_required_english_nouns" AS
-        SELECT DISTINCT job_id, platform, unnested_required_english_nouns
-        FROM "de1_1_database"."2nd_processed_data", 
-        UNNEST(required_english_nouns) AS t(unnested_required_english_nouns);
-    """,
-    
-    "jd_preferred_english_nouns":"""
-        CREATE TABLE IF NOT EXISTS "de1_1_database"."jd_preferred_english_nouns" AS
-        SELECT DISTINCT job_id, platform, unnested_preferred_english_nouns
-        FROM "de1_1_database"."2nd_processed_data",
-        UNNEST(preferred_english_nouns) AS t(unnested_preferred_english_nouns);
-    """
-}
-
-process_table_queries(new_tables_queries)
-
+process_table_queries(create_table_list=create_table_list)
 
 # Setting up the dependencies for start and end tasks
 start_task >> dimension_drop_tasks

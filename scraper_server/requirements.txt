@@ -7,7 +7,6 @@ attrs==23.1.0
 awscli==1.29.28
 beautifulsoup4==4.12.2
 boto3==1.28.22
-botocore==1.31.22
 certifi==2023.7.22
 chardet==5.2.0
 charset-normalizer==3.2.0
@@ -38,3 +37,6 @@ tzdata==2023.3
 urllib3==1.26.16
 uvicorn==0.23.2
 yarl==1.9.2
+pytest==7.4.0
+httpx==0.24.1
+pytest-asyncio

@@ -14,6 +14,7 @@ from typing import Sequence, TYPE_CHECKING, Optional
 
 class AthenaOperator(BaseOperator):
     template_fields: Sequence[str] = ('query', 'output_location')
+    template_ext: str = ".sql"
 
     @apply_defaults
     def __init__(
