@@ -40,7 +40,7 @@ class S3Uploader:
         month = str(today.month).zfill(2)
         day = str(today.day).zfill(2)
 
-        return f's3://{self.bucket_name}/1st_cleaned_data/year={year}/month={month}/day={day}'
+        return f's3://{self.bucket_name}/1st_cleaned_data_total'
     
     def delete_crc_files(self):
         """
@@ -51,7 +51,7 @@ class S3Uploader:
         month = str(today.month).zfill(2)
         day = str(today.day).zfill(2)
 
-        remote_path = f'1st_cleaned_data/year={year}/month={month}/day={day}'
+        remote_path = f'1st_cleaned_data_total'
 
         response = self.s3.list_objects(Bucket=self.bucket_name, Prefix=remote_path)
 
@@ -65,15 +65,17 @@ class S3Uploader:
 
 
 # Function to create DynamicFrame from the catalog
+# push_down_predicate=f'(year=="{year}" and month=="{month}" and day=="{day}")'
+
 def create_dyf_from_catalog(database_name, table_name):
     today = date.today()
     year = str(today.year)
     month = str(today.month).zfill(2)
     day = str(today.day).zfill(2)
+    
     return glueContext.create_dynamic_frame.from_catalog(
         database=database_name,
-        table_name=table_name,
-        push_down_predicate=f'(year=="{year}" and month=="{month}" and day=="{day}")'
+        table_name=table_name    
     )
 
 
@@ -108,7 +110,7 @@ def unnest_and_rename(df):
 
 
 def rearrange_dataframe_columns(df: DataFrame, columns: List[str]) -> DataFrame:
-        return df.select(*columns)
+    return df.select(*columns)
 
 
 def process_text_columns(df: DataFrame, columns: List[str]) -> DataFrame:
@@ -208,7 +210,7 @@ jumpit_df = jumpit_dyf.toDF()
 wanted_df = wanted_dyf.toDF()
 
 # Apply the refactored function
-# jobplanet_df = unnest_and_rename(jobplanet_df)
+#jobplanet_df = unnest_and_rename(jobplanet_df)
 
 # # 여기서 플랫폼별 중복제거
 # # year, month, day 기준으로 정렬 -> 'job_id' + 'category' 기준으로 date가 최신꺼만 남기고 다 삭제
@@ -217,7 +219,7 @@ wanted_df = wanted_dyf.toDF()
 # jumpit_not_duplicate_df = get_recent_jd_data(jumpit_df)
 # jobplanet_not_duplicate_df = get_recent_jd_data(jobplanet_df)
 
-# # 스키마를 rallit_df 스키마와 동일하게 조정 (중복제거 했을 때)
+# # 스키마를 rallit_df 스키마와 동일하게 조정
 # rallit_df = rallit_not_duplicate_df
 # wanted_df = wanted_not_duplicate_df.select(rallit_df.columns)
 # jumpit_df = jumpit_not_duplicate_df.select(rallit_df.columns)
@@ -267,16 +269,17 @@ schema = StructType([
     StructField("middle_category", StringType(), True),
     StructField("sub_category", StringType(), True)
 ])
+
 mapping_df = spark.createDataFrame(data_list, schema=schema)
 df_with_mapped_categories = df_final.join(mapping_df, df_final.category == mapping_df.sub_category, "left")
 
 new_columns = [
+        'year', 'month', 'day', \
         'job_id','platform', 'category', 'major_category', 'middle_category', \
         'sub_category', 'company', 'title', 'preferred', 'required', 'primary_responsibility', \
         'url', 'end_at', 'skills', 'location', 'welfare', 'body', 'company_description', 'coordinate'
     ]
 
-df_with_mapped_categories = rearrange_dataframe_columns(df_with_mapped_categories, new_columns)
 df_with_mapped_categories = rearrange_dataframe_columns(df_with_mapped_categories, new_columns)
 
 text_columns = ['preferred', 'required', 'primary_responsibility', 'welfare', 'company_description']
@@ -289,11 +292,17 @@ df_with_coordinate = df_filter_for_jobplanet_jumpit.withColumn('coordinate', get
 
 result_df = df_filter_for_wanted_rallit.union(df_with_coordinate)
 
+# 'year', 'month', 'day' 컬럼의 유일한 값들을 선택하고 정렬
+unique_dates = result_df.select('year', 'month', 'day').distinct().orderBy('year', 'month', 'day')
+
+# 결과 출력
+unique_dates.show()
+
 result_repartitioned_df = result_df.repartition(1)
 
 uploader = S3Uploader(BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME)
 upload_file_path = uploader.get_upload_file_path()
-result_repartitioned_df.write.parquet(upload_file_path, mode="overwrite")
+result_repartitioned_df.write.partitionBy('year', 'month', 'day').parquet(upload_file_path, mode="overwrite")
 uploader.delete_crc_files()
 
 # glueContext.stop() -> Glue는 job.commit으로 stop 역할을 합니다.
