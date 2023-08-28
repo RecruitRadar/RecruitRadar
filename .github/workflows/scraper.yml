@@ -5,10 +5,11 @@ name: Continuous Integration and Deployment
 on:
   workflow_run:
     workflows: ["TEST"]
-    branches: [ feat/add-hajun2 ]
+    # branches: [ feat/add-hajun2 ]
     types:
       - completed
-  workflow_dispatch:
+ 
+  # workflow_dispatch:
   
 
 jobs:
