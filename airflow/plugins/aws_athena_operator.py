@@ -23,6 +23,7 @@ class AthenaOperator(BaseOperator):
         database,
         aws_conn_id='aws_default',
         region_name='ap-northeast-2',
+        max_time=1200,
         sleep_time=30,
         *args, **kwargs
     ):
@@ -33,6 +34,10 @@ class AthenaOperator(BaseOperator):
         self.aws_conn_id = aws_conn_id
         self.sleep_time = sleep_time
         self.region_name = region_name
+        self.start_time = time.time()
+        self.current_time = None
+        self.max_time = max_time
+        self.time_out = False
         self.query_execution_id = None  # initialize with None
 
 
@@ -61,12 +66,24 @@ class AthenaOperator(BaseOperator):
             response = client.get_query_execution(QueryExecutionId=self.query_execution_id)
             state = response['QueryExecution']['Status']['State']
 
+            self.current_time = time.time()
+
+            if int(self.current_time - self.start_time) > self.max_time: # If the query execution time exceeds max time
+                self.time_out = True
+                break
+
+
             if state in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
                 break
             else:
                 self.log.info("Query is still running. Sleep for %s seconds", self.sleep_time)
                 time.sleep(self.sleep_time)
 
+
+        if self.time_out:
+            self.log.error("Query execution exceeds: %d seconds", self.max_time)
+            raise AirflowException(f"Redshift query execution excceds {self.max_time} seconds")
+            
         if state == 'FAILED':
             self.log.error("Query execution failed: %s", response['QueryExecution']['Status']['StateChangeReason'])
             raise AirflowException("Athena query failed")
