@@ -34,12 +34,16 @@ jobs:
         env:
           TESTING: true
         run: |
-          pytest
-          zip -r9 report.zip /
+          pytest --cov=your_package --cov-report html:htmlcov
 
-      # Upload Test Results
-      - name: Upload Artifact
+          
+      # Zip and Upload Coverage Report as an Artifact
+      - name: Zip Coverage Report
+        run: zip -r report.zip htmlcov/
+
+
+      - name: Upload Coverage Report
         uses: actions/upload-artifact@v2
         with:
-          name: REPORT
+          name: CoverageReport
           path: report.zip
