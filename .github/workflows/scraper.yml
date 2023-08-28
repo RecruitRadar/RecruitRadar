@@ -2,16 +2,15 @@ name: Continuous Integration and Deployment
 
 # push:
 #   branches: [ main ]
+# workflow_dispatch:
+# branches: [ feat/add-hajun2 ]
+
 on:
   workflow_run:
     workflows: ["TEST"]
-    # branches: [ feat/add-hajun2 ]
     types:
       - completed
  
-  # workflow_dispatch:
-  
-
 jobs:
   
   build_and_upload:
@@ -44,6 +43,7 @@ jobs:
           --deployment-group-name aws-fastapi-group \
           --s3-location bucket=de1-1-backend,bundleType=tgz,key=backend_folder/RecruitRadar.tar.gz
   
+
   deploy_to_ec2:
     name: Deploy to EC2
     needs: build_and_upload
