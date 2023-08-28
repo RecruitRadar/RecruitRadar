@@ -1,8 +1,13 @@
 name: Continuous Integration and Deployment
 
 on:
-  push:
-    branches: [ main ]
+  # push:
+  #   branches: [ main ]
+  workflow_run:
+    workflows: ["TEST"]
+    branches: [ feat/add-hajun2 ]
+    types:
+      - completed
   workflow_dispatch:
 
 jobs:
