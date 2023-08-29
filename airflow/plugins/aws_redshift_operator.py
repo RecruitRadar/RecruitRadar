@@ -7,23 +7,29 @@ import time
 import boto3
 
 class RedshiftOperator(BaseOperator):
-    template_fields = ('query', 'params')
-    template_ext = ".sql"
+    template_fields = (
+        'sql',
+        'database',
+        'work_group_name',
+        'aws_conn_id',
+        'region_name',
+        )
+    template_ext = (".sql",)
 
     @apply_defaults
     def __init__(
         self,
-        query,
+        sql,
         database,
         work_group_name,
         aws_conn_id='aws_default',
         region_name='ap-northeast-2',
         max_time=1200,
         sleep_time=30,
-        *args, **kwargs
+        **kwargs
     ):
-        super().__init__(*args, **kwargs)
-        self.query = query
+        super().__init__(**kwargs)
+        self.sql = sql
         self.database = database
         self.aws_conn_id = aws_conn_id
         self.work_group_name = work_group_name
@@ -49,7 +55,7 @@ class RedshiftOperator(BaseOperator):
         query_object = client.execute_statement(
             Database=self.database,
             WorkgroupName=self.work_group_name,
-            Sql=self.query
+            Sql=self.sql
         )
 
         self.query_statement_id = query_object['ResponseMetadata']['RequestId']
