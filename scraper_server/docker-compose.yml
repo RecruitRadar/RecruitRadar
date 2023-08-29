@@ -14,7 +14,7 @@ services:
         # - POSTGRES_PW=${POSTGRES_PW}
         # - POSTGRES_HOST=${POSTGRES_HOST}
         # - POSTGRES_DB=${POSTGRES_DB}
-    container_name: aws-ecs-fastapi
+    container_name: aws-fastapi
     command: python server.py
     volumes:
       - .:/app
