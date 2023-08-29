@@ -22,16 +22,13 @@ dag = DAG(
     description='DAG for redshift queries to create data mart',
     schedule_interval=timedelta(days=1),
     start_date=datetime(2023, 1, 1),
-    template_searchpath='/opt/airflow/dags/sqls',
+    template_searchpath='/opt/airflow/dags/sqls/redshift',
     catchup=False
 )
 
 WORK_GROUP_NAME = 'de-1-1-redshift'
 AWS_CONN_ID = 'aws_default'
 DATABASE = 'dev'
-# EXTERNAL_DATABASE = 'de1_1_database'
-# EXTERNAL_SCHEMA = 'raw_data_external'
-# SCHEMA = 'analytics'
 
 
 start_task = DummyOperator(task_id="start", dag=dag)
@@ -47,34 +44,19 @@ initialize_schema_task = RedshiftOperator(
             dag=dag
         )
 
-drop_schema_task = RedshiftOperator(
-            task_id='run_redshift_drop_schema',
-            query="drop_schema.sql",
-            database=DATABASE,
-            work_group_name=WORK_GROUP_NAME,
-            aws_conn_id=AWS_CONN_ID,
-            # params={
-            #     'schema_name': SCHEMA,
-            # },
-            dag=dag
-        )
-
 create_schema_task = RedshiftOperator(
             task_id='run_redshift_create_schema',
             query="create_schema.sql",
             database=DATABASE,
             work_group_name=WORK_GROUP_NAME,
             aws_conn_id=AWS_CONN_ID,
-            # params={
-            #     'schema_name': SCHEMA,
-            # },
             dag=dag
         )
 
 def short_delay():
     time.sleep(10)
 
-etl_table_list = [
+elt_table_list = [
     'unique_jds',
 ] # set the elt table list
 
@@ -89,10 +71,6 @@ def process_elt_table_queries(table_list):
             database=DATABASE,
             work_group_name=WORK_GROUP_NAME,
             aws_conn_id=AWS_CONN_ID,
-            # params={
-            #     'table_name': table_name,
-            #     'schema_name': SCHEMA,
-            # },
             dag=dag
         )
 
@@ -108,11 +86,6 @@ def process_elt_table_queries(table_list):
             database=DATABASE,
             work_group_name=WORK_GROUP_NAME,
             aws_conn_id=AWS_CONN_ID,
-            # params={
-            #     'table_name': table_name,
-            #     'schema_name': SCHEMA,
-            #     'external_schema_name': EXTERNAL_SCHEMA
-            # },
             dag=dag
         )
         drop_task >> delay_task >> create_task
@@ -120,10 +93,10 @@ def process_elt_table_queries(table_list):
         dimension_create_tasks.append(create_task)
 
 
-process_elt_table_queries(etl_table_list)
+process_elt_table_queries(elt_table_list)
 
 # Setting up the dependencies for start and end tasks
-start_task >> initialize_schema_task >> drop_schema_task >> create_schema_task >> dimension_drop_tasks
+start_task >> initialize_schema_task >> create_schema_task >> dimension_drop_tasks
 dimension_create_tasks >> end_task
 
 
