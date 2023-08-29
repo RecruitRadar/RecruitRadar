@@ -12,4 +12,4 @@ SELECT DISTINCT
     middle_category,
     sub_category
 FROM
-    "de1_1_database"."2nd_processed_data";
+    "de1_1_database"."2nd_processed_data_total";

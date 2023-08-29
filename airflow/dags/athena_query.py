@@ -98,7 +98,9 @@ create_table_list = [
     "jd_preferred_korean_nouns", 
     "jd_required_korean_nouns",
     "jd_primary_responsibility_korean_nouns", 
-    "jd_welfare_korean_nouns", "jd_primary_responsibility_english_nouns", "jd_welfare_english_nouns",
+    "jd_welfare_korean_nouns", 
+    "jd_primary_responsibility_english_nouns", 
+    "jd_welfare_english_nouns",
     "jd_required_english_nouns", 
     "jd_preferred_english_nouns"
 ]
