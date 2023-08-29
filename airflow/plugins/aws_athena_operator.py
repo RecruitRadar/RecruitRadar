@@ -13,6 +13,20 @@ from typing import Sequence, TYPE_CHECKING, Optional
 #     from airflow.utils.context import Context
 
 class AthenaOperator(BaseOperator):
+    
+    """
+    Custom Airflow Operator for running AWS Athena queries.
+
+    Attributes:
+        query (str): The SQL query to execute.
+        output_location (str): The S3 location to store query results.
+        database (str): The database to run the query on.
+        aws_conn_id (str): Airflow AWS connection ID. Default is 'aws_default'.
+        region_name (str): AWS region for Athena service. Default is 'ap-northeast-2'.
+        max_time (int): Maximum time for query execution in seconds. Default is 1200 seconds.
+        sleep_time (int): Time to sleep while polling for query completion. Default is 30 seconds.
+    """
+    
     template_fields: Sequence[str] = ('query', 'output_location')
     template_ext: str = ".sql"
 
@@ -28,6 +42,20 @@ class AthenaOperator(BaseOperator):
         sleep_time=30,
         *args, **kwargs
     ):
+        
+        """
+        Initialize the AthenaOperator.
+
+        Args:
+            query (str): The SQL query to execute.
+            output_location (str): The S3 location to store query results.
+            database (str): The database to run the query on.
+            aws_conn_id (str): Airflow AWS connection ID. Default is 'aws_default'.
+            region_name (str): AWS region for Athena service. Default is 'ap-northeast-2'.
+            max_time (int): Maximum time for query execution in seconds. Default is 1200 seconds.
+            sleep_time (int): Time to sleep while polling for query completion. Default is 30 seconds.
+        """
+        
         super().__init__(*args, **kwargs)
         self.query = query
         self.output_location = output_location
@@ -43,7 +71,18 @@ class AthenaOperator(BaseOperator):
 
 
     def execute(self, context) -> Optional[str]:
-        # Fetch the AWS credentials from the connection set in Airflow UI
+        """
+        Execute the Athena query.
+
+        Args:
+            context (dict): Airflow context parameters.
+
+        Returns:
+            Optional[str]: Query execution ID if successful, None otherwise.
+
+        Raises:
+            AirflowException: If the query execution failed or timed out.
+        """
         aws_hook = AwsHook(self.aws_conn_id)
         creds = aws_hook.get_credentials()
 
@@ -98,7 +137,12 @@ class AthenaOperator(BaseOperator):
 
 
     def on_kill(self) -> None:
-        """Cancel the submitted athena query using boto3."""
+        """
+        Cancel the running query when receiving a kill signal.
+
+        Raises:
+            ClientError: If unable to cancel the query.
+        """        
         client = boto3.client('athena', region_name=self.region_name)  # Use the defined region_name
         if self.query_execution_id:
             self.log.info("Received a kill signal.")
