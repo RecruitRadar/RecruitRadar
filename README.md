@@ -17,6 +17,13 @@
 |:---:|:---:|:---:|:---:|
 | <img src="https://github.com/kmus1232.png" width='400' /> | <img src="https://github.com/DaewonSeo.png" width='400' /> | <img src="https://github.com/HaJunYoo.png" width='400' /> | <img src="https://github.com/heewoneha.png" width='400' /> |
 
+## Results of This Project
+
+![AllCategory](https://github.com/RecruitRadar/RecruitRadar/assets/74031620/f1e2efc7-86aa-46e7-87fd-35857bde952b)
+
+![MajorMiddleSubCategory](https://github.com/RecruitRadar/RecruitRadar/assets/74031620/4d81fe0d-fe7b-4122-84ec-256270d41c9f)
+
+
 ## Project Architecture
 ![System Architecture](https://github.com/RecruitRadar/RecruitRadar/assets/74031620/e9c654e5-0124-4771-ae62-9102342fc5af)
 
