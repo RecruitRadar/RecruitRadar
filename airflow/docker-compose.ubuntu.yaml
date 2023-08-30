@@ -59,6 +59,9 @@ x-airflow-common:
     AIRFLOW_VAR_DAGS_SQL_DIR: /opt/airflow/dags/sqls
 
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__PARALLELISM: 3
+    AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 4
+
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     # For backward compatibility, with Airflow <2.3
     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow

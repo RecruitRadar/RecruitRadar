@@ -64,15 +64,24 @@ class S3Uploader:
                     raise Exception("AWS credentials not available")
 
 
+# # Function to create DynamicFrame from the catalog
+# def create_dyf_from_catalog(database_name, table_name):
+#     today = date.today()
+#     year = str(today.year)
+#     month = str(today.month).zfill(2)
+#     day = str(today.day).zfill(2)
+#     return glueContext.create_dynamic_frame.from_catalog(
+#         database=database_name,
+#         table_name=table_name,
+#         push_down_predicate=f'(year=="{year}" and month=="{month}" and day=="{day}")'
+#     )
 # Function to create DynamicFrame from the catalog
-# push_down_predicate=f'(year=="{year}" and month=="{month}" and day=="{day}")'
 
 def create_dyf_from_catalog(database_name, table_name):
     today = date.today()
     year = str(today.year)
     month = str(today.month).zfill(2)
     day = str(today.day).zfill(2)
-    
     return glueContext.create_dynamic_frame.from_catalog(
         database=database_name,
         table_name=table_name    
@@ -175,6 +184,17 @@ def get_coordinate_from_location(location, KAKAO_API_TOKEN=KAKAO_API_TOKEN):
         print(f'Error occurred: {e} while fetching address: {location}')
 
 
+# # 플랫폼별 중복제거 함수
+# def get_recent_jd_data(df):
+#     df = df.withColumn('date', to_date(concat(col('year'), lit('-'), col('month'), lit('-'), col('day')), "yyyy-MM-dd"))
+#     window_spec = Window.partitionBy('job_id', 'category').orderBy(col('date').desc())
+#     sorted_df = df.withColumn('row_number', row_number().over(window_spec)) \
+#                   .filter(col('row_number') == 1) \
+#                   .drop('row_number', 'date')
+    
+#     return sorted_df
+
+
 # Initialize the Spark and Glue contexts
 sc = SparkContext.getOrCreate()
 glueContext = GlueContext(sc)
@@ -200,6 +220,19 @@ wanted_df = wanted_dyf.toDF()
 
 # Apply the refactored function
 #jobplanet_df = unnest_and_rename(jobplanet_df)
+
+# # 여기서 플랫폼별 중복제거
+# # year, month, day 기준으로 정렬 -> 'job_id' + 'category' 기준으로 date가 최신꺼만 남기고 다 삭제
+# rallit_not_duplicate_df = get_recent_jd_data(rallit_df)
+# wanted_not_duplicate_df = get_recent_jd_data(wanted_df)
+# jumpit_not_duplicate_df = get_recent_jd_data(jumpit_df)
+# jobplanet_not_duplicate_df = get_recent_jd_data(jobplanet_df)
+
+# # 스키마를 rallit_df 스키마와 동일하게 조정
+# rallit_df = rallit_not_duplicate_df
+# wanted_df = wanted_not_duplicate_df.select(rallit_df.columns)
+# jumpit_df = jumpit_not_duplicate_df.select(rallit_df.columns)
+# jobplanet_df = jobplanet_not_duplicate_df.select(rallit_df.columns)
 
 # 스키마를 rallit_df 스키마와 동일하게 조정
 wanted_df = wanted_df.select(rallit_df.columns)

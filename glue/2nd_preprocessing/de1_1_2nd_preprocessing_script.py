@@ -30,16 +30,13 @@ class S3Uploader:
             region_name=region_name
         )
 
+
+    
     def get_upload_file_path(self):
         """
-        2차 전처리된 최종 parquet 파일을 s3에 업로드할 경로를 리턴합니다.
+        1차 전처리된 최종 parquet 파일을 s3에 업로드할 경로를 리턴합니다.
         """
-        today = date.today()
-        year = str(today.year)
-        month = str(today.month).zfill(2)
-        day = str(today.day).zfill(2)
-
-        return f's3://{self.bucket_name}/2nd_processed_data/year={year}/month={month}/day={day}'
+        return f's3://{self.bucket_name}/2nd_processed_data_total'
         
         
 def get_secret():
@@ -72,16 +69,13 @@ def get_secret():
 
     return BUCKET_NAME, ACCESS_KEY, SECRET_KEY, REGION_NAME, KAKAO_API_TOKEN
 
+
 def create_dyf_from_catalog(database_name, table_name):
-    today = date.today()
-    year = str(today.year)
-    month = str(today.month).zfill(2)
-    day = str(today.day).zfill(2)
     return glueContext.create_dynamic_frame.from_catalog(
         database=database_name,
-        table_name=table_name,
-        push_down_predicate=f'(year=="{year}" and month=="{month}" and day=="{day}")'
+        table_name=table_name    
     )
+
 
 def extract_korean_noun(kiwi, text):
     if text is None or text.strip() == "":
@@ -103,18 +97,14 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 
 
-dyf = create_dyf_from_catalog('de1_1_database', '1st_cleaned_data')
+dyf = create_dyf_from_catalog('de1_1_database', '1st_cleaned_data_total')
 dyf.printSchema()
 
 df = dyf.toDF()
 df.show()
 
-drop_cols = ("year", "month", "day")
-result_df = df.drop(*drop_cols)
-result_df.printSchema()
-result_df.show()
 
-result_df = result_df.toPandas()
+result_df = df.toPandas()
 
 
 kiwi = Kiwi()
@@ -139,7 +129,9 @@ spark_df = spark.createDataFrame(result_df)
 spark_df.printSchema()
 spark_df.show()
 
-spark_df.repartition(1).write.parquet(upload_file_path, mode="overwrite")
+result_repartitioned_df = spark_df.repartition(1)
+result_repartitioned_df.write.partitionBy('year', 'month', 'day').parquet(upload_file_path, mode="overwrite")
+
 
 job.commit()
 sc.stop()
