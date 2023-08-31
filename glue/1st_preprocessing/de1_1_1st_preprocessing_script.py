@@ -64,24 +64,7 @@ class S3Uploader:
                     raise Exception("AWS credentials not available")
 
 
-# # Function to create DynamicFrame from the catalog
-# def create_dyf_from_catalog(database_name, table_name):
-#     today = date.today()
-#     year = str(today.year)
-#     month = str(today.month).zfill(2)
-#     day = str(today.day).zfill(2)
-#     return glueContext.create_dynamic_frame.from_catalog(
-#         database=database_name,
-#         table_name=table_name,
-#         push_down_predicate=f'(year=="{year}" and month=="{month}" and day=="{day}")'
-#     )
-# Function to create DynamicFrame from the catalog
-
 def create_dyf_from_catalog(database_name, table_name):
-    today = date.today()
-    year = str(today.year)
-    month = str(today.month).zfill(2)
-    day = str(today.day).zfill(2)
     return glueContext.create_dynamic_frame.from_catalog(
         database=database_name,
         table_name=table_name    
@@ -206,8 +189,6 @@ rallit_df = rallit_dyf.toDF()
 jumpit_df = jumpit_dyf.toDF()
 wanted_df = wanted_dyf.toDF()
 
-# Apply the refactored function
-#jobplanet_df = unnest_and_rename(jobplanet_df)
 
 # 스키마를 rallit_df 스키마와 동일하게 조정
 wanted_df = wanted_df.select(rallit_df.columns)
