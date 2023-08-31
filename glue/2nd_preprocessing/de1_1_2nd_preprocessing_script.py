@@ -34,7 +34,7 @@ class S3Uploader:
     
     def get_upload_file_path(self):
         """
-        1차 전처리된 최종 parquet 파일을 s3에 업로드할 경로를 리턴합니다.
+        2차 전처리된 최종 parquet 파일을 s3에 업로드할 경로를 리턴합니다.
         """
         return f's3://{self.bucket_name}/2nd_processed_data_total'
         
