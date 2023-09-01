@@ -2,19 +2,34 @@ from airflow.models import BaseOperator
 from airflow.contrib.hooks.aws_hook import AwsHook
 from airflow.exceptions import AirflowException
 from airflow.utils.decorators import apply_defaults
+from typing import Sequence, Optional
 from botocore.exceptions import ClientError
 import time
 import boto3
 
 class RedshiftOperator(BaseOperator):
-    template_fields = (
+
+    """
+    Executes SQL queries on Amazon Redshift using the 'redshift-data' boto3 client.
+
+    Attributes:
+        sql (str): SQL query to be executed.
+        database (str): database: The name of the database to execute the query on.
+        work_group_name (str): The name of the workgroup where the query will be executed.
+        aws_conn_id (str): The Airflow connection ID to fetch AWS credentials.
+        region_name (str): AWS region where Redshift is located.
+        max_time (int): Maximum execution time for the query in seconds. Default is 1200 (20 minutes).
+        sleep_time (int): Time interval to wait between polling for query status in seconds. Default is 30 seconds.
+    """
+
+    template_fields: Sequence[str] = (
         'sql',
         'database',
         'work_group_name',
         'aws_conn_id',
         'region_name',
         )
-    template_ext = (".sql",)
+    template_ext: Sequence[str] = (".sql",)
 
     @apply_defaults
     def __init__(
@@ -42,7 +57,19 @@ class RedshiftOperator(BaseOperator):
         self.query_execution_id = None
 
 
-    def execute(self, context) -> str:
+    def execute(self, context) -> Optional[str]:
+        """
+        Execute the Redshift query.
+
+        Args:
+            context (dict): Airflow context parameters.
+
+        Returns:
+            Optional[str]: Query execution ID if successful, None otherwise.
+
+        Raises:
+            AirflowException: If the query execution failed or timed out.
+        """
         aws_hook = AwsHook(self.aws_conn_id)
         creds = aws_hook.get_credentials()
         client = boto3.client(
@@ -69,7 +96,7 @@ class RedshiftOperator(BaseOperator):
                 self.time_out = True
                 break
 
-            if status in ['FINISHED', 'FAILED', 'ABORTED', '']:
+            if status in ['FINISHED', 'FAILED', 'ABORTED']:
                 break
             else:
                 self.log.info("Query is still running. Sleep for %s seconds", self.sleep_time)

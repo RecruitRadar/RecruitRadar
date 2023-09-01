@@ -1,4 +1,3 @@
-# athena_dag.py
 from datetime import datetime, timedelta
 from airflow import DAG
 from aws_redshift_operator import RedshiftOperator
