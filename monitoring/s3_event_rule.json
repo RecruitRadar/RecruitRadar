@@ -1,0 +1,9 @@
+{
+  "source": ["aws.s3"],
+  "detail-type": ["Object Created", "Object Deleted"],
+  "detail": {
+    "bucket": {
+      "name": ["de-1-1"]
+    }
+  }
+}

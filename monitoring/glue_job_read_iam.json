@@ -1,0 +1,12 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Effect": "Allow",
+			"Action": [
+				"glue:GetJobRun"
+			],
+			"Resource": "arn:aws:glue:ap-northeast-2:<AWS_ID>:job/*"
+		}
+	]
+}

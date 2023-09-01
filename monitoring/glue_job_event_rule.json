@@ -1,0 +1,8 @@
+{
+    "source": ["aws.glue"],
+    "detail-type": ["Glue Job State Change"],
+    "detail": {
+      "state": ["SUCCEEDED", "FAILED", "TIMEOUT", "STOPPED"],
+      "jobName": ["de1_1_1st_preprocessing_script", "de1_1_2nd_preprocessing_script"]
+    }
+  }
