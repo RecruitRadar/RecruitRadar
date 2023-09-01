@@ -135,7 +135,11 @@
   │    ├── server.py
   │    └── test_app.py
   └── monitoring
-       └── ...
+       ├── s3_event_rule.json
+       ├── s3_alert_lambda.py
+       ├── glue_job_event_rule.json
+       ├── glue_job_alert_lambda.py
+       └── glue_job_read_iam.json
   ```
 
 ### Summary
